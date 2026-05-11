@@ -6990,6 +6990,6 @@ async def on_ready():
 
     print("起動OK2")
 
-#bot.run("MTQ4NzM2NjU4MTYxNjExNTgxMg.Ge7vBK.AR7pjVIe3J5zZeIhL5tg7E0bpTKVYZQja8YKhY")
+
 keep_alive()
 bot.run(os.getenv("TOKEN"))
