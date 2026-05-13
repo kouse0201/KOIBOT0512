@@ -5829,6 +5829,9 @@ def save_job_panels():
 
 job_panels = load_job_panels()
 
+# Bonus保存
+pending_bonus = {}
+
 # owner固定パネル
 OWNER_FILE = "owner_panel.json"
 
@@ -5900,7 +5903,10 @@ async def refresh_owner_panel():
             f"```"
         )
 
-        await msg.edit(embed=embed)
+        await msg.edit(
+            embed=embed,
+            view=OwnerRefreshView()
+        )
 
     except Exception as e:
         print("OWNER更新失敗:", e)
@@ -5953,7 +5959,22 @@ async def auto_refresh_panels():
         except Exception as e:
             print("JOB更新失敗:", e)
             remove_list.append(uid)
+            
+async def refresh_everything():
 
+    # OWNER
+    await refresh_owner_panel()
+
+    # JOB
+    for uid in list(job_panels.keys()):
+
+        try:
+            await refresh_job_panel(uid)
+        except Exception as e:
+            print("JOB更新失敗:", e)
+
+    # 勤務パネル
+    await refresh_all_panels()
 
 @tree.command(name="panel")
 async def panel(interaction):
@@ -6729,7 +6750,10 @@ async def owner(interaction: discord.Interaction):
         color=0x2b2d31
     )
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(
+        embed=embed,
+        view=OwnerRefreshView()
+    )
 
     msg = await interaction.original_response()
 
@@ -6739,6 +6763,87 @@ async def owner(interaction: discord.Interaction):
     )
 
     await refresh_owner_panel()
+
+class OwnerRefreshView(discord.ui.View):
+
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(
+        label="🔄 更新",
+        style=discord.ButtonStyle.primary
+    )
+    async def refresh_button(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button
+    ):
+
+        await interaction.response.defer()
+
+        await refresh_everything()
+
+        panel = load_owner_panel()
+
+        channel = bot.get_channel(panel["channel_id"])
+        msg = await channel.fetch_message(panel["message_id"])
+
+        await interaction.edit_original_response(
+            embed=msg.embeds[0],
+            view=self
+        )
+
+
+class BonusView(discord.ui.View):
+
+    def __init__(self, target_id, amount):
+        super().__init__(timeout=None)
+
+        self.target_id = str(target_id)
+        self.amount = amount
+
+    @discord.ui.button(
+        label="💰 受け取る",
+        style=discord.ButtonStyle.success
+    )
+    async def receive_bonus(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button
+    ):
+
+        # 対象者以外禁止
+        if str(interaction.user.id) != self.target_id:
+
+            await interaction.response.send_message(
+                "対象者専用です",
+                ephemeral=True
+            )
+            return
+
+        init_user(interaction.user)
+
+        uid = str(interaction.user.id)
+
+        # 給料反映
+        data[uid]["pay"] += self.amount
+
+        save_data(data)
+
+        # 全更新
+        await refresh_everything()
+
+        # Bonusメッセージ削除
+        await interaction.message.delete()
+
+        try:
+            await interaction.response.send_message(
+                f"✅ ボーナス {yen(self.amount)} を受け取りました",
+                ephemeral=True
+            )
+        except:
+            pass
+
 
 class JobView(discord.ui.View):
 
@@ -6965,6 +7070,26 @@ async def dice_1d20(interaction: discord.Interaction):
 async def dice_1d100(interaction: discord.Interaction):
     await roll_dice(interaction, 100)
 
+@tree.command(name="bonus")
+async def bonus(
+    interaction: discord.Interaction,
+    対象者: discord.Member,
+    金額: int
+):
+
+    embed = discord.Embed(
+        title="🎁 BONUS",
+        description=(
+            f"対象者：{対象者.mention}\n"
+            f"金額：{yen(金額)}"
+        ),
+        color=0xf1c40f
+    )
+
+    await interaction.response.send_message(
+        embed=embed,
+        view=BonusView(対象者.id, 金額)
+    )
 # ------------------------
 # 起動
 # ------------------------
@@ -6978,6 +7103,8 @@ async def on_ready():
 
     work_view = WorkView()
     bot.add_view(work_view)
+    bot.add_view(OwnerRefreshView())
+    bot.add_view(BonusView(0,0))
 
     await tree.sync()
     await update_status()
