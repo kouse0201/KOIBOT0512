@@ -6771,8 +6771,10 @@ class OwnerRefreshView(discord.ui.View):
 
     @discord.ui.button(
         label="🔄 更新",
-        style=discord.ButtonStyle.primary
-    )
+        style=discord.ButtonStyle.primary,
+        custom_id="owner_refresh"
+        )
+
     async def refresh_button(
         self,
         interaction: discord.Interaction,
@@ -6804,8 +6806,10 @@ class BonusView(discord.ui.View):
 
     @discord.ui.button(
         label="💰 受け取る",
-        style=discord.ButtonStyle.success
+        style=discord.ButtonStyle.success,
+        custom_id="bonus_receive"
     )
+    
     async def receive_bonus(
         self,
         interaction: discord.Interaction,
