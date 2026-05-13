@@ -6809,7 +6809,6 @@ class BonusView(discord.ui.View):
         style=discord.ButtonStyle.success,
         custom_id="bonus_receive"
     )
-
     async def receive_bonus(
         self,
         interaction: discord.Interaction,
@@ -6825,29 +6824,33 @@ class BonusView(discord.ui.View):
             )
             return
 
-        # 先に応答
-        await interaction.response.defer()
-        
+        # ボタン無効化
+        button.disabled = True
+
+        try:
+            await interaction.response.edit_message(view=self)
+        except:
+            return
+
         init_user(interaction.user)
-        
+ 
         uid = str(interaction.user.id)
 
         # 給料反映
         data[uid]["pay"] += self.amount
-        
+
         save_data(data)
-        
+
         # 全更新
         await refresh_everything()
 
         # メッセージ削除
         try:
             await interaction.message.delete()
-            
         except:
             pass
 
-        # 完了メッセージ
+        # 完了
         try:
             await interaction.followup.send(
                 f"✅ ボーナス {yen(self.amount)} を受け取りました",
