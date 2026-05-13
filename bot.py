@@ -6818,30 +6818,38 @@ class BonusView(discord.ui.View):
 
         # 対象者以外禁止
         if str(interaction.user.id) != self.target_id:
-
+            
             await interaction.response.send_message(
                 "対象者専用です",
                 ephemeral=True
             )
             return
 
+        # 先に応答
+        await interaction.response.defer()
+        
         init_user(interaction.user)
-
+        
         uid = str(interaction.user.id)
 
         # 給料反映
         data[uid]["pay"] += self.amount
-
+        
         save_data(data)
-
+        
         # 全更新
         await refresh_everything()
 
-        # Bonusメッセージ削除
-        await interaction.message.delete()
-
+        # メッセージ削除
         try:
-            await interaction.response.send_message(
+            await interaction.message.delete()
+            
+        except:
+            pass
+
+        # 完了メッセージ
+        try:
+            await interaction.followup.send(
                 f"✅ ボーナス {yen(self.amount)} を受け取りました",
                 ephemeral=True
             )
