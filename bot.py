@@ -6809,7 +6809,7 @@ class BonusView(discord.ui.View):
         style=discord.ButtonStyle.success,
         custom_id="bonus_receive"
     )
-    
+
     async def receive_bonus(
         self,
         interaction: discord.Interaction,
@@ -7078,16 +7078,28 @@ async def dice_1d100(interaction: discord.Interaction):
 async def bonus(
     interaction: discord.Interaction,
     対象者: discord.Member,
-    金額: int
+    金額: int,
+    備考: str
 ):
 
     embed = discord.Embed(
         title="🎁 BONUS",
-        description=(
-            f"対象者：{対象者.mention}\n"
-            f"金額：{yen(金額)}"
-        ),
         color=0xf1c40f
+    )
+
+    embed.description = (
+        f"👤 対象者\n"
+        f"{対象者.mention}\n\n"
+
+        f"💰 金額\n"
+        f"```yaml\n"
+        f"{yen(金額)}\n"
+        f"```\n"
+
+        f"📝 備考\n"
+        f"```yaml\n"
+        f"{備考}\n"
+        f"```"
     )
 
     await interaction.response.send_message(
