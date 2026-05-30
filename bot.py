@@ -4,29 +4,11 @@ import json
 from datetime import datetime, timedelta, timezone
 import os
 import random
-from flask import Flask
-from threading import Thread
-
-
 
 intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "Bot is running"
-
-def run_web():
-    app.run(host="0.0.0.0", port=10000)
-
-def keep_alive():
-    t = Thread(target=run_web)
-    t.start()
 tree = bot.tree
-
-BACKUP_CHANNEL_ID = 1490323490601959554
 
 # ------------------------
 # JST
@@ -43,26 +25,11 @@ def load_data():
     except:
         return {}
 
-def save_data(new_data):
-
-    global data
-    global backup_needed
-
-    with open("data.json", "w", encoding="utf-8") as f:
-        json.dump(new_data, f, indent=2, ensure_ascii=False)
-
-    # 保存後に再読込
-    data = load_data()
-
-    # バックアップ予約
-    backup_needed = True
-
+def save_data(data):
+    with open("data.json","w",encoding="utf-8") as f:
+        json.dump(data,f,indent=2,ensure_ascii=False)
 
 data = load_data()
-
-backup_needed = False
-last_backup_time = None
-
 
 if "_global" not in data:
     data["_global"] = {}
@@ -99,112 +66,6 @@ def init_user(user):
 def yen(n):
     return f"{int(n):,}円"
 
-async def send_backup():
-
-    global last_backup_time
-    global backup_needed
-
-    try:
-
-        channel = bot.get_channel(BACKUP_CHANNEL_ID)
-
-        if not channel:
-            print("バックアップch取得失敗")
-            return
-
-        now = datetime.now(JST)
-
-        filename = (
-            f"【決算データバックアップ】"
-            f"{now.strftime('%m月%d日%H時%M分')}.json"
-        )
-
-        await channel.send(
-            content=(
-                f"📦 データバックアップ\n"
-                f"{now.strftime('%m.%d.%H:%M')}"
-            ),
-            file=discord.File(
-                "data.json",
-                filename=filename
-            )
-        )
-
-        last_backup_time = now
-        backup_needed = False
-
-        print("バックアップ送信完了")
-
-    except Exception as e:
-        print("バックアップ失敗:", e)
-
-async def refresh_job_panel(member_id):
-
-    global data
-    global job_panels
-
-    data = load_data()
-
-    uid = str(member_id)
-
-    if uid not in job_panels:
-        return
-
-    try:
-        panel = job_panels[uid]
-
-        channel = bot.get_channel(panel["channel_id"])
-
-        if not channel:
-            return
-
-        msg = await channel.fetch_message(panel["message_id"])
-
-        member = msg.guild.get_member(int(uid))
-
-        if not member:
-            return
-
-        view = JobView(member)
-
-        await msg.edit(
-            embed=view.build_embed(),
-            view=view
-        )
-
-    except Exception as e:
-        print("JOB更新失敗:", e)
-        
-async def refresh_all_panels():
-
-    global panel_messages
-
-    remove_list = []
-
-    for panel in panel_messages:
-
-        try:
-            channel = bot.get_channel(panel["channel_id"])
-
-            if not channel:
-                continue
-
-            msg = await channel.fetch_message(panel["message_id"])
-
-            await msg.edit(
-                embed=work_view.embed(),
-                view=work_view
-            )
-
-        except Exception as e:
-            print("勤務パネル更新失敗:", e)
-            remove_list.append(panel)
-
-    for r in remove_list:
-        if r in panel_messages:
-            panel_messages.remove(r)
-
-    save_panels()
 # ------------------------
 # 京都ねぎらい
 # ------------------------
@@ -236,8 +97,7 @@ def get_kyoto_message(seconds):
             "義務ピッタリで帰るん、逆に感心してしまいますえ。",
             "その“ギリギリ精神”、よう貫いてはるわぁ。",
             "必要以上はせぇへん、ええスタイル持ってはりますなぁ。",
-            "ほんま、損せぇへん働き方、ようご存じどすなぁ。",
-            "義務やんなぁ"
+            "ほんま、損せぇへん働き方、ようご存じどすなぁ。"
         ]
 
     elif 70 < minutes < 110:
@@ -342,26 +202,6 @@ def fix_to_jst():
 def get_working_count():
     return sum(1 for u in data.values() if u.get("is_working"))
 
-@tasks.loop(minutes=1)
-async def auto_backup():
-
-    global last_backup_time
-    global backup_needed
-
-    now = datetime.now(JST)
-
-    # 初回起動時
-    if last_backup_time is None:
-        await send_backup()
-        return
-
-    diff = (now - last_backup_time).total_seconds()
-
-    # 1時間経過 or データ更新
-    if diff >= 3600 or backup_needed:
-        await send_backup()
-
-
 @tasks.loop(seconds=10)
 async def update_status():
     count = get_working_count()
@@ -402,7 +242,7 @@ MENU = {
     "全日メニュー":{
         "めんこいくん鍋":{"price":8500,"cost":4250},
         "一口コロッケ":{"price":4000,"cost":1875},
-        "京のぶぶ漬け":{"price":3000,"cost":600},
+        "京のぶぶ漬け":{"price":8500,"cost":4250},
         "湯巡り梅":{"price":3500,"cost":1750},
         "ほかほか湯豆腐スープ":{"price":5000,"cost":2375},
         "お子様ランチ":{"price":4000,"cost":1750},
@@ -441,6 +281,9 @@ MENU = {
         "ちるいん":{"price":8000,"cost":3625},
         },
     "季節限定メニュー":{
+        "6月限定梅雨雨巡りセット":{"price":15000,"cost":6500},
+        "梅雨空クリームソーダ":{"price":8000,"cost":3250},
+        "雨音手毬寿司":{"price":8000,"cost":3250},
         "5月限定こいのぼりセット":{"price":12000,"cost":6775},
         "春の桜づくしセット":{"price":16000,"cost":6625},
         "桜香る春御膳":{"price":6000,"cost":1500},
@@ -549,7 +392,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "KOI特選お寿司盛り合わせ 5回": {
+        "KOI特選お寿司盛り合わせ5回": {
             "金額": 22500,
             "体力": 15,
             "アーマー": 20,
@@ -659,7 +502,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "電動マッサージ 機継続回復": {
+        "電動マッサージ機継続回復": {
             "金額": 50000,
             "体力": 0,
             "アーマー": 30,
@@ -1039,7 +882,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "すき焼き御膳 3回": {
+        "すき焼き御膳3回": {
             "金額": 30000,
             "体力": 0,
             "アーマー": 35,
@@ -1059,7 +902,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "ブレンド珈琲饅頭 10回": {
+        "ブレンド珈琲饅頭10回": {
             "金額": 100000,
             "体力": 0,
             "アーマー": 40,
@@ -1088,36 +931,6 @@ SEARCH_MENU = {
             "ストレス": 30,
             "使用速度": "普",
             "移動上昇": False
-        },
-        "めんこいくん鍋": {
-            "金額": 8500,
-            "体力": 0,
-            "アーマー": 30,
-            "満腹": 40,
-            "水分": "40",
-            "ストレス": 30,
-            "使用速度": "普",
-            "移動上昇": False
-        },
-        "一口コロッケ": {
-            "金額": 4000,
-            "体力": 20,
-            "アーマー": 0,
-            "満腹": 15,
-            "水分": "0",
-            "ストレス": 0,
-            "使用速度": "早",
-            "移動上昇": False
-        },
-        "京のぶぶ漬け": {
-            "金額": 3000,
-            "体力": "-30",
-            "アーマー": "-30",
-            "満腹": 81,
-            "水分": 81,
-            "ストレス": "-50",
-            "使用速度": "早",
-            "移動上昇": True
         },
     },
     "パン屋": {
@@ -1353,7 +1166,7 @@ SEARCH_MENU = {
         },
     },
     "PIPEDOWN-North-": {
-        "レギュラー 10回": {
+        "レギュラー10回": {
             "金額": 15000,
             "体力": 0,
             "アーマー": 0,
@@ -1363,7 +1176,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "メンソール 10回": {
+        "メンソール10回": {
             "金額": 17000,
             "体力": 0,
             "アーマー": 10,
@@ -1373,7 +1186,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "フレーバー各種 10回": {
+        "フレーバー各種10回": {
             "金額": 70000,
             "体力": 0,
             "アーマー": 40,
@@ -1383,7 +1196,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "夢銘柄各種 10回": {
+        "夢銘柄各種10回": {
             "金額": 50000,
             "体力": 0,
             "アーマー": 0,
@@ -1393,7 +1206,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ウィスキー 酔": {
+        "ウィスキー酔": {
             "金額": 1500,
             "体力": 0,
             "アーマー": 0,
@@ -1403,7 +1216,7 @@ SEARCH_MENU = {
             "使用速度": "遅",
             "移動上昇": False
         },
-        "JACK,D酔 5回": {
+        "JACK,D酔 ,5回": {
             "金額": 70000,
             "体力": 0,
             "アーマー": 20,
@@ -1423,7 +1236,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "KINGS PALETO 10回": {
+        "KINGS PALETO10回": {
             "金額": 150000,
             "体力": 0,
             "アーマー": 50,
@@ -1443,7 +1256,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "MEMENTO NORI 10回": {
+        "MEMENTO NORI10回": {
             "金額": 100000,
             "体力": 0,
             "アーマー": 60,
@@ -1453,29 +1266,9 @@ SEARCH_MENU = {
             "使用速度": "遅",
             "移動上昇": False
         },
-        "FAST GEAR 10回": {
-            "金額": 65000,
-            "体力": 0,
-            "アーマー": 35,
-            "満腹": 0,
-            "水分": "-10",
-            "ストレス": 35,
-            "使用速度": "遅",
-            "移動上昇": False
-        },
-         "AMOR FATI 10回": {
-            "金額": 65000,
-            "体力": 0,
-            "アーマー": 40,
-            "満腹": 0,
-            "水分": "-10",
-            "ストレス": 30,
-            "使用速度": "遅",
-            "移動上昇": False
-        },
     },
     "PIPEDOWN-South-": {
-        "ノーマル 10回": {
+        "ノーマル10回": {
             "金額": 15000,
             "体力": 0,
             "アーマー": 0,
@@ -1485,7 +1278,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "メンソール 10回": {
+        "メンソール10回": {
             "金額": 17000,
             "体力": 0,
             "アーマー": 10,
@@ -1495,7 +1288,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "フレーバー各種 10回": {
+        "フレーバー各種10回": {
             "金額": 70000,
             "体力": 0,
             "アーマー": 40,
@@ -1505,7 +1298,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "夢銘柄各種 10回": {
+        "夢銘柄各種10回": {
             "金額": 50000,
             "体力": 0,
             "アーマー": 0,
@@ -1555,7 +1348,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "BUB CIGARETTE 10回": {
+        "BUB CIGARETTE10回": {
             "金額": 30000,
             "体力": 0,
             "アーマー": 0,
@@ -1605,7 +1398,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "フェスティバル BUBCIGARETTER 10回ランダム10から40のアーマー": {
+        "フェスティバルBUBCIGARETTER10回ランダム10から40のアーマー": {
             "金額": 50000,
             "体力": 0,
             "アーマー": 0,
@@ -1635,6 +1428,8 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": True
         },
+
+
     },
     "Aqua Bar": {
         "チーズブラトー": {
@@ -1717,7 +1512,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ブルーコーラルリーフ 酔": {
+        "ブルーコーラルリーフ酔": {
             "金額": 5500,
             "体力": 0,
             "アーマー": 0,
@@ -1737,7 +1532,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "チャイナブルー 酔": {
+        "チャイナブルー酔": {
             "金額": 7000,
             "体力": 0,
             "アーマー": 10,
@@ -1747,7 +1542,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ヴァイオレットフィズ 酔": {
+        "ヴァイオレットフィズ酔": {
             "金額": 10000,
             "体力": 0,
             "アーマー": 0,
@@ -1876,26 +1671,6 @@ SEARCH_MENU = {
             "ストレス": 20,
             "使用速度": "普",
             "移動上昇": True
-        },
-        "ニコイチ 10回": {
-            "金額": 100000,
-            "体力": 0,
-            "アーマー": 20,
-            "満腹": 0,
-            "水分": 0,
-            "ストレス": 0,
-            "使用速度": "早",
-            "移動上昇": True
-        },
-        "アクライナー 酔": {
-            "金額": 10000,
-            "体力": 0,
-            "アーマー": 0,
-            "満腹": 0,
-            "水分": 50,
-            "ストレス": 10,
-            "使用速度": "普",
-            "移動上昇": False
         },
     },
     "アイス屋": {
@@ -2029,7 +1804,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "ブルーベリーアイスサンド 3回": {
+        "ブルーベリーアイスサンド3回": {
             "金額": 21000,
             "体力": 0,
             "アーマー": 15,
@@ -2089,7 +1864,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "アイスボール 5回": {
+        "アイスボール5回": {
             "金額": 30000,
             "体力": 0,
             "アーマー": 0,
@@ -2169,35 +1944,6 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "チョコミントアイス": {
-            "金額": 5500,
-            "体力": 0,
-            "アーマー": 0,
-            "満腹": 5,
-            "水分": 0,
-            "ストレス": 30,
-            "使用速度": "早",
-            "移動上昇": False
-        },
-        "道化師の祝杯": {
-            "金額": 8888,
-            "体力": 0,
-            "アーマー": 25,
-            "満腹": 20,
-            "水分": 20,
-            "ストレス": 0,
-            "使用速度": "早",
-            "移動上昇": False
-        },
-        "大天使の休息": {
-            "金額": 9000,
-            "体力": 0,
-            "アーマー": 0,
-            "満腹": 0,
-            "水分": 35,
-            "ストレス": 40,
-            "使用速度": "早",
-            "移動上昇": False
     },
     "Mystic Spells": {
         "ポーション": {
@@ -2472,7 +2218,7 @@ SEARCH_MENU = {
         },
     },    
     "Pearl": {
-        "Pearl ビール 酔": {
+        "Pearl ビール酔": {
             "金額": 5000,
             "体力": 0,
             "アーマー": 15,
@@ -2482,7 +2228,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ドルサワ各種 酔": {
+        "ドルサワ各種酔": {
             "金額": 5000,
             "体力": 0,
             "アーマー": 0,
@@ -2492,7 +2238,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "白ワイン": {
+        "白ワイン酔": {
             "金額": 7500,
             "体力": 0,
             "アーマー": 10,
@@ -2502,7 +2248,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "赤ワイン": {
+        "赤ワイン酔": {
             "金額": 7500,
             "体力": 0,
             "アーマー": 40,
@@ -2512,7 +2258,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ハイボール 酔": {
+        "ハイボール酔": {
             "金額": 7500,
             "体力": 0,
             "アーマー": 20,
@@ -2542,7 +2288,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "サバのヴィネグレットマリネ 5回": {
+        "サバのヴィネグレットマリネ5回": {
             "金額": 12000,
             "体力": 0,
             "アーマー": 10,
@@ -2552,7 +2298,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "タコとスズキの海鮮ピラフ 5回": {
+        "タコとスズキの海鮮ピラフ5回": {
             "金額": 150000,
             "体力": 0,
             "アーマー": 35,
@@ -2562,7 +2308,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "サメのフカヒレスープ 5回": {
+        "サメのフカヒレスープ5回": {
             "金額": 100000,
             "体力": 0,
             "アーマー": 70,
@@ -2622,7 +2368,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "アジの塩焼き 3回": {
+        "アジの塩焼き3回": {
             "金額": 15000,
             "体力": 0,
             "アーマー": 20,
@@ -2632,7 +2378,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "メジナの姿盛り 5回": {
+        "メジナの姿盛り5回": {
             "金額": 50000,
             "体力": 0,
             "アーマー": 30,
@@ -2642,7 +2388,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ブリの照り焼き 3回": {
+        "ブリの照り焼き3回": {
             "金額": 18000,
             "体力": 0,
             "アーマー": 25,
@@ -2652,7 +2398,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "イシダイの姿盛り 5回": {
+        "イシダイの姿盛り5回": {
             "金額": 55000,
             "体力": 0,
             "アーマー": 50,
@@ -2662,7 +2408,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "メバルの煮付け 5回": {
+        "メバルの煮付け5回": {
             "金額": 40000,
             "体力": 0,
             "アーマー": 15,
@@ -2672,7 +2418,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "鯛めし 5回": {
+        "鯛めし5回": {
             "金額": 50000,
             "体力": 0,
             "アーマー": 40,
@@ -2682,7 +2428,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ふぐ刺し 3回": {
+        "ふぐ刺し3回": {
             "金額": 21000,
             "体力": 0,
             "アーマー": 25,
@@ -2692,7 +2438,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "真鯛のアクアパッツァ 5回": {
+        "真鯛のアクアパッツァ5回": {
             "金額": 40000,
             "体力": 0,
             "アーマー": 20,
@@ -2702,7 +2448,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "イカ刺し 3回": {
+        "イカ刺し3回": {
             "金額": 21000,
             "体力": 0,
             "アーマー": 30,
@@ -2712,7 +2458,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "タコの唐揚げ 3回": {
+        "タコの唐揚げ3回": {
             "金額": 21000,
             "体力": 0,
             "アーマー": 20,
@@ -2722,7 +2468,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "シイラのFish＆Chips 3回": {
+        "シイラのFish＆Chips3回": {
             "金額": 30000,
             "体力": 0,
             "アーマー": 25,
@@ -2732,7 +2478,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "タチウオの煮付け 3回": {
+        "タチウオの煮付け3回": {
             "金額": 25500,
             "体力": 0,
             "アーマー": 30,
@@ -2742,7 +2488,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "イサキのポワレ 5回": {
+        "イサキのポワレ5回": {
             "金額": 42500,
             "体力": 0,
             "アーマー": 15,
@@ -2752,7 +2498,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ヒラマサのカルパッチョの船盛り 3回": {
+        "ヒラマサのカルパッチョの船盛り3回": {
             "金額": 18000,
             "体力": 0,
             "アーマー": 0,
@@ -2762,7 +2508,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "Pearl特製スモークサーモンピザ 10回": {
+        "Pearl特製スモークサーモンピザ10回": {
             "金額": 120000,
             "体力": 0,
             "アーマー": 35,
@@ -2772,7 +2518,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "イカのシシカバブ 3回": {
+        "イカのシシカバブ3回": {
             "金額": 15000,
             "体力": 0,
             "アーマー": 0,
@@ -2804,7 +2550,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "カヨペ豚のスペアリブ 2回": {
+        "カヨペ豚のスペアリブ2回": {
             "金額": 15000,
             "体力": 0,
             "アーマー": 15,
@@ -2814,7 +2560,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "猪肉の回鍋肉 3回": {
+        "猪肉の回鍋肉3回": {
             "金額": 25000,
             "体力": 0,
             "アーマー": 0,
@@ -2944,7 +2690,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "鹿肉の赤ワイン煮込み 3回": {
+        "鹿肉の赤ワイン煮込み3回": {
             "金額": 28000,
             "体力": 0,
             "アーマー": 15,
@@ -2954,7 +2700,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "カルネ・デ・ポルコアレンテジャーノ 5回": {
+        "カルネ・デ・ポルコアレンテジャーノ5回": {
             "金額": 40000,
             "体力": 0,
             "アーマー": 35,
@@ -2974,7 +2720,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "生ハムメロン 2回": {
+        "生ハムメロン2回": {
             "金額": 15000,
             "体力": 0,
             "アーマー": 0,
@@ -2984,7 +2730,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "黒ヒョウコーヒー 6回": {
+        "黒ヒョウコーヒー6回": {
             "金額": 60000,
             "体力": 0,
             "アーマー": 25,
@@ -2992,26 +2738,6 @@ SEARCH_MENU = {
             "水分": 20,
             "ストレス": 25,
             "使用速度": "早",
-            "移動上昇": False
-            },
-        "ELETE CRISTAL VODKA 確率で酔": {
-            "金額": 200000,
-            "体力": 0,
-            "アーマー": 0,
-            "満腹": 0,
-            "水分": 100,
-            "ストレス": 0,
-            "使用速度": "普",
-            "移動上昇": False
-        },
-        "ガッツリステーキ 金箔添え 10回": {
-            "金額": 250000,
-            "体力": 0,
-            "アーマー": 100,
-            "満腹": 100,
-            "水分": 0,
-            "ストレス": 60,
-            "使用速度": "遅",
             "移動上昇": False
         },
     },
@@ -3186,7 +2912,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "極濃厚豚骨ラーメン 継続回復": {
+        "極濃厚豚骨ラーメン継続回復": {
             "金額": 9000,
             "体力": 0,
             "アーマー": 30,
@@ -3730,7 +3456,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ホットチキン 2回": {
+        "ホットチキン2回": {
             "金額": 13600,
             "体力": 0,
             "アーマー": 18,
@@ -3740,7 +3466,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "ショットチキン 2回": {
+        "ショットチキン2回": {
             "金額": 11600,
             "体力": 0,
             "アーマー": 0,
@@ -3750,7 +3476,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "ホットチキン 6回": {
+        "ホットチキン6回": {
             "金額": 40800,
             "体力": 0,
             "アーマー": 18,
@@ -3760,7 +3486,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "ショットチキン 6回": {
+        "ショットチキン6回": {
             "金額": 34800,
             "体力": 0,
             "アーマー": 0,
@@ -3850,7 +3576,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ゴカ・コーラー 6回": {
+        "ゴカ・コーラー6回": {
             "金額": 33600,
             "体力": 0,
             "アーマー": 0,
@@ -3910,7 +3636,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "フィギュアBOX 人形がランダム": {
+        "フィギュアBOX人形がランダム": {
             "金額": 90000,
             "体力": 0,
             "アーマー": 0,
@@ -3932,7 +3658,7 @@ SEARCH_MENU = {
         },
     },
     "LUXXX CLUB": {
-        "ビール 酔": {
+        "ビール酔": {
             "金額": 12000,
             "体力": 0,
             "アーマー": 0,
@@ -3942,7 +3668,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "シャンディガフ 酔": {
+        "シャンディガフ酔": {
             "金額": 14000,
             "体力": 0,
             "アーマー": 0,
@@ -3952,7 +3678,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "レッドアイ 酔": {
+        "レッドアイ酔": {
             "金額": 14000,
             "体力": 0,
             "アーマー": 0,
@@ -3962,7 +3688,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ハイボール 酔": {
+        "ハイボール酔": {
             "金額": 12000,
             "体力": 0,
             "アーマー": 0,
@@ -3972,7 +3698,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "コークハイ 酔": {
+        "コークハイ酔": {
             "金額": 14000,
             "体力": 0,
             "アーマー": 0,
@@ -3982,7 +3708,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ウーロンハイ 酔": {
+        "ウーロンハイ酔": {
             "金額": 14000,
             "体力": 0,
             "アーマー": 0,
@@ -3992,7 +3718,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "レモンサワー 酔": {
+        "レモンサワー酔": {
             "金額": 13000,
             "体力": 0,
             "アーマー": 0,
@@ -4002,7 +3728,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ジントニック 酔": {
+        "ジントニック酔": {
             "金額": 14000,
             "体力": 0,
             "アーマー": 0,
@@ -4012,7 +3738,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "モスコミュール 酔": {
+            "モスコミュール酔": {
             "金額": 15000,
             "体力": 0,
             "アーマー": 0,
@@ -4022,7 +3748,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "カシスオレンジ 酔": {
+        "カシスオレンジ酔": {
             "金額": 14000,
             "体力": 0,
             "アーマー": 0,
@@ -4032,7 +3758,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "ファージーネーブル 酔": {
+        "ファージーネーブル酔": {
             "金額": 14000,
             "体力": 0,
             "アーマー": 0,
@@ -4042,7 +3768,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "レゲエパンチ 酔": {
+        "レゲエパンチ酔": {
             "金額": 14000,
             "体力": 0,
             "アーマー": 0,
@@ -4052,7 +3778,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "カルアーミルク 酔": {
+        "カルアーミルク酔": {
             "金額": 15000,
             "体力": 0,
             "アーマー": 0,
@@ -4062,7 +3788,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "梅酒 酔": {
+        "梅酒酔": {
             "金額": 16000,
             "体力": 0,
             "アーマー": 0,
@@ -4072,7 +3798,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "梅酒ソーダ 酔": {
+        "梅酒ソーダ酔": {
             "金額": 15000,
             "体力": 0,
             "アーマー": 0,
@@ -4082,7 +3808,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "テキーラ 酔": {
+        "テキーラ酔": {
             "金額": 16000,
             "体力": 0,
             "アーマー": 0,
@@ -4134,36 +3860,6 @@ SEARCH_MENU = {
         },
         "フレンチフライ": {
             "金額": 15000,
-            "体力": 0,
-            "アーマー": 0,
-            "満腹": 0,
-            "水分": 0,
-            "ストレス": 0,
-            "使用速度": "普",
-            "移動上昇": False
-        },
-        "ニコイチ 10回": {
-            "金額": 100000,
-            "体力": 0,
-            "アーマー": 20,
-            "満腹": 0,
-            "水分": 0,
-            "ストレス": 0,
-            "使用速度": "早",
-            "移動上昇": True
-        },
-        "黄昏": {
-            "金額": 30000,
-            "体力": 0,
-            "アーマー": 10,
-            "満腹": 0,
-            "水分": 25,
-            "ストレス": 20,
-            "使用速度": "普",
-            "移動上昇": False
-        },
-        "黄昏25年": {
-            "金額": 1000000,
             "体力": 0,
             "アーマー": 0,
             "満腹": 0,
@@ -4374,7 +4070,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-        "カステラ 3回": {
+        "カステラ3回": {
             "金額": 15000,
             "体力": 0,
             "アーマー": 0,
@@ -4384,7 +4080,7 @@ SEARCH_MENU = {
             "使用速度": "遅",
             "移動上昇": False
         },
-        "金平糖 5回": {
+        "金平糖5回": {
             "金額": 20000,
             "体力": 0,
             "アーマー": 15,
@@ -4564,7 +4260,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
-        "不思議な水まんじゅう 効果不明": {
+        "不思議な水まんじゅう効果不明": {
             "金額": 17000,
             "体力": 0,
             "アーマー": 0,
@@ -4572,16 +4268,6 @@ SEARCH_MENU = {
             "水分": 0,
             "ストレス": 0,
             "使用速度": "普",
-            "移動上昇": False
-        },
-        "錦玉羹": {
-            "金額": 2750,
-            "体力": 0,
-            "アーマー": 0,
-            "満腹": 15,
-            "水分": 15 ,
-            "ストレス": 0,
-            "使用速度": "早",
             "移動上昇": False
         },
     },
@@ -4666,7 +4352,7 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },        
-        "龍の髭餃子 5回": {
+        "龍の髭餃子5回": {
             "金額": 25000,
             "体力": 0,
             "アーマー": 35,
@@ -4764,36 +4450,6 @@ SEARCH_MENU = {
             "水分": 40,
             "ストレス": 70,
             "使用速度": "普",
-            "移動上昇": False
-        },
-        "ルーローハン": {
-            "金額": 18000,
-            "体力": 0,
-            "アーマー": 50,
-            "満腹": 60,
-            "水分": 0,
-            "ストレス": 70,
-            "使用速度": "遅",
-            "移動上昇": False
-        },
-        "香包(黒龍) 10回": {
-            "金額": 70000,
-            "体力": 0,
-            "アーマー": 0,
-            "満腹": 0,
-            "水分": 0,
-            "ストレス": 100,
-            "使用速度": "遅",
-            "移動上昇": False
-        },
-        "香包(白龍) 10回": {
-            "金額": 70000,
-            "体力": 0,
-            "アーマー": 0,
-            "満腹": 0,
-            "水分": 0,
-            "ストレス": 50,
-            "使用速度": "早",
             "移動上昇": False
         },
     },
@@ -5672,8 +5328,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-    },
-  }
+    }
 }
 def format_effects(eff):
     text = ""
@@ -5930,8 +5585,6 @@ class OrderView(discord.ui.View):
 
             save_data(data)
 
-            await refresh_job_panel(interaction.user.id)
-
             ch=discord.utils.get(interaction.guild.text_channels,name="💹売上報告")
             if ch:
                 await ch.send(
@@ -5982,32 +5635,10 @@ class WorkView(discord.ui.View):
     async def start(self, interaction, button):
         init_user(interaction.user)
         uid = str(interaction.user.id)
-        now = datetime.now(timezone.utc).astimezone(JST)
-
         data[uid]["is_working"] = True
-        data[uid]["start_time"] = now.isoformat()
-
-        # 出勤履歴を即追加
-        data[uid]["history"].append({
-            "start": now.isoformat(),
-            "end": None
-        })
-
+        data[uid]["start_time"] = datetime.now(timezone.utc).astimezone(JST).isoformat()
         save_data(data)
-
-        # ★ jobパネル更新
-        await refresh_job_panel(interaction.user.id)
-        
-
-        await interaction.response.defer()
-
-        await refresh_all_panels()
-
-        await interaction.edit_original_response(
-            embed=self.embed(),
-            view=self
-        )
-
+        await interaction.response.edit_message(embed=self.embed(), view=self)
         await update_status()
 
     @discord.ui.button(label="退勤",style=discord.ButtonStyle.danger,custom_id="end")
@@ -6023,234 +5654,61 @@ class WorkView(discord.ui.View):
         message = get_kyoto_message(diff)
 
         data[uid]["total_time"]+=diff
-        if data[uid]["history"]:
-
-           data[uid]["history"][-1]["end"] = now.isoformat()
+        data[uid]["history"].append({
+            "start":data[uid]["start_time"],
+            "end":now.isoformat()
+        })
 
         data[uid]["is_working"]=False
         data[uid]["start_time"]=None
         save_data(data)
 
-        await refresh_job_panel(interaction.user.id)
-        
-
-        await interaction.response.defer()
-
-        await refresh_all_panels()
-
-        await interaction.edit_original_response(
-            embed=self.embed(),
-            view=self
-        )
-
-        await interaction.followup.send(
-            message,
-            ephemeral=True
-        )
+        await interaction.response.edit_message(embed=self.embed(),view=self)
+        await interaction.followup.send(message,ephemeral=True)
 
     @discord.ui.button(label="オーダー",style=discord.ButtonStyle.primary,custom_id="order")
     async def order(self,interaction,button):
         await interaction.response.send_message("注文👇",view=OrderView(),ephemeral=True)
-    
+
+    @discord.ui.button(label="勤務時間",style=discord.ButtonStyle.secondary,custom_id="time_btn")
+    async def time_btn(self,interaction,button):
+        uid=str(interaction.user.id)
+        u=data.get(uid,{})
+        total=u.get("total_time",0)
+        h=int(total//3600)
+        m=int((total%3600)//60)
+
+        history=u.get("history",[])
+        text=f"{h}時間{m}分\n"
+        for hst in history[-5:]:
+            try:
+                start = to_jst(datetime.fromisoformat(hst.get("start"))).strftime("%Y/%m/%d %H:%M")
+                end = to_jst(datetime.fromisoformat(hst.get("end"))).strftime("%Y/%m/%d %H:%M")
+                text += f"{start} → {end}\n"
+            except:
+                text += f"{hst.get('start')} → {hst.get('end')}\n"
+
+        await interaction.response.send_message(text,ephemeral=True)
+
+    @discord.ui.button(label="給料確認",style=discord.ButtonStyle.secondary,custom_id="pay_btn")
+    async def pay_btn(self,interaction,button):
+        uid=str(interaction.user.id)
+        u=data.get(uid,{})
+        await interaction.response.send_message(
+            f"給料:{yen(u.get('pay',0))}\n"
+            f"売上:{yen(u.get('sales',0))}\n"
+            f"総売上:{yen(u.get('total_sales',0))}",
+            ephemeral=True
+            )
 
 # ------------------------
 # コマンド
 # ------------------------
-work_view = None
-
-PANEL_FILE = "panels.json"
-def load_panels():
-    try:
-        with open(PANEL_FILE, "r") as f:
-            return json.load(f)
-    except:
-        return []
-
-def save_panels():
-    with open(PANEL_FILE, "w") as f:
-        json.dump(panel_messages, f)
-
-panel_messages = load_panels()
-
-# job固定パネル保存
-JOB_PANEL_FILE = "job_panels.json"
-
-def load_job_panels():
-    try:
-        with open(JOB_PANEL_FILE, "r") as f:
-            return json.load(f)
-    except:
-        return {}
-
-def save_job_panels():
-    with open(JOB_PANEL_FILE, "w") as f:
-        json.dump(job_panels, f)
-
-job_panels = load_job_panels()
-
-# Bonus保存
-pending_bonus = {}
-
-# owner固定パネル
-OWNER_FILE = "owner_panel.json"
-
-def load_owner_panel():
-    try:
-        with open(OWNER_FILE, "r") as f:
-            return json.load(f)
-    except:
-        return {}
-
-def save_owner_panel(channel_id, message_id):
-    with open(OWNER_FILE, "w") as f:
-        json.dump({
-            "channel_id": channel_id,
-            "message_id": message_id
-        }, f)
-
-async def refresh_owner_panel():
-
-    global data
-
-    data = load_data()
-
-    panel = load_owner_panel()
-
-    if not panel:
-        return
-
-    try:
-        channel = bot.get_channel(panel["channel_id"])
-
-        if not channel:
-            return
-
-        msg = await channel.fetch_message(panel["message_id"])
-
-        # ------------------------
-        # 金額計算
-        # ------------------------
-        shop_profit = data.get("_global", {}).get("shop_profit", 0)
-
-        total_pay = sum(
-            u.get("pay", 0)
-            for uid, u in data.items()
-            if uid != "_global"
-        )
-
-        vault_total = shop_profit + total_pay
-
-        embed = discord.Embed(
-            color=0x2b2d31
-        )
-
-        embed.description = (
-            f"🏦 **ジョブ金庫**\n"
-            f"💰 ジョブ金庫残高\n"
-            f"```yaml\n"
-            f"${vault_total:,}\n"
-            f"```\n"
-
-            f"🧾 従業員給料\n"
-            f"```yaml\n"
-            f"${total_pay:,}\n"
-            f"```\n"
-
-            f"📈 店舗総利益\n"
-            f"```yaml\n"
-            f"${shop_profit:,}\n"
-            f"```"
-        )
-
-        await msg.edit(
-            embed=embed,
-            view=OwnerRefreshView()
-        )
-
-    except Exception as e:
-        print("OWNER更新失敗:", e)
-
-
-@tasks.loop(seconds=5)
-async def auto_refresh_panels():
-
-    global data
-    global owner_panel_message
-    global job_panels
-
-    # 毎回最新JSON
-    data = load_data()
-
-    # ========================
-    # OWNER更新
-    # ========================
-    await refresh_owner_panel()
-
-    # ========================
-    # JOB更新
-    # ========================
-    remove_list = []
-
-    for uid, msg in job_panels.items():
-
-        try:
-            panel = job_panels[uid]
-            
-            channel = bot.get_channel(panel["channel_id"])
-
-            if not channel:
-                continue
-
-            msg = await channel.fetch_message(panel["message_id"])
-
-            member = msg.guild.get_member(int(uid))
-
-            if not member:
-                continue
-
-            view = JobView(member)
-
-            await msg.edit(
-                embed=view.build_embed(),
-                view=view
-            )
-
-        except Exception as e:
-            print("JOB更新失敗:", e)
-            remove_list.append(uid)
-            
-async def refresh_everything():
-
-    # OWNER
-    await refresh_owner_panel()
-
-    # JOB
-    for uid in list(job_panels.keys()):
-
-        try:
-            await refresh_job_panel(uid)
-        except Exception as e:
-            print("JOB更新失敗:", e)
-
-    # 勤務パネル
-    await refresh_all_panels()
+work_view=None
 
 @tree.command(name="panel")
 async def panel(interaction):
-
-    await interaction.response.send_message(
-        embed=work_view.embed(),
-        view=work_view
-    )
-
-    msg = await interaction.original_response()
-
-    panel_messages.append({
-        "channel_id": msg.channel.id,
-        "message_id": msg.id
-    })
-
-    save_panels()
+    await interaction.response.send_message(embed=work_view.embed(),view=work_view)
 
 @tree.command(name="time")
 async def time(interaction, member:discord.Member):
@@ -6267,7 +5725,7 @@ async def time(interaction, member:discord.Member):
 
     if history:
         text += "【出退勤履歴】\n"
-        for hst in history[-20:]:
+        for hst in history[-5:]:
             try:
                 start = to_jst(datetime.fromisoformat(hst.get("start"))).strftime("%Y/%m/%d %H:%M")
                 end = to_jst(datetime.fromisoformat(hst.get("end"))).strftime("%Y/%m/%d %H:%M")
@@ -6346,7 +5804,6 @@ async def edittime(interaction,member:discord.Member,minutes:int):
     uid=str(member.id)
     data[uid]["total_time"]=max(0,data[uid]["total_time"]+minutes*60)
     save_data(data)
-    await refresh_job_panel(member.id)
     await interaction.response.send_message("OK",ephemeral=True)
 
 @tree.command(name="editpaying")
@@ -6360,8 +5817,6 @@ async def editpaying(interaction,member:discord.Member,target:str,amount:int):
         data[uid]["sales"] += amount  # ←max削除
 
     save_data(data)
-    await refresh_job_panel(member.id)
-    
     await interaction.response.send_message("OK",ephemeral=True)
 
 @tree.command(name="editprofit")
@@ -6381,7 +5836,6 @@ async def resettime(interaction,member:discord.Member):
     data[uid]["total_time"]=0
     data[uid]["history"]=[]
     save_data(data)
-    await refresh_job_panel(member.id)
     await interaction.response.send_message("OK",ephemeral=True)
 
 @tree.command(name="resetpaying")
@@ -6393,8 +5847,6 @@ async def resetpaying(interaction,member:discord.Member):
     data[uid]["sales"]=0
 
     save_data(data)
-    await refresh_job_panel(member.id)
-    
     await interaction.response.send_message("OK",ephemeral=True)
 
 @tree.command(name="backup")
@@ -6794,618 +6246,24 @@ async def searchmenu2(
             embeds=chunk,
             ephemeral=True
         )
-
-@tree.command(name="open")
-async def open_status(interaction: discord.Interaction):
-
-    now = datetime.now(JST)
-
-    # 7日分
-    start_day = (now - timedelta(days=6)).replace(
-        hour=0,
-        minute=0,
-        second=0,
-        microsecond=0
-    )
-
-    # =========================
-    # 全勤務データ取得
-    # =========================
-    works = []
-
-    for uid, u in data.items():
-
-        for h in u.get("history", []):
-
-            try:
-                st = to_jst(datetime.fromisoformat(h["start"]))
-                en = to_jst(datetime.fromisoformat(h["end"]))
-            except:
-                continue
-
-            # 範囲外
-            if en < start_day:
-                continue
-
-            works.append((st, en))
-
-    if not works:
-        await interaction.response.send_message(
-            "データなし",
-            ephemeral=True
-        )
-        return
-
-    # =========================
-    # 日別ログ
-    # =========================
-    embeds = []
-
-    for i in range(7):
-
-        day_start = start_day + timedelta(days=i)
-        day_end = day_start + timedelta(days=1)
-
-        # -------------------------
-        # イベント生成
-        # -------------------------
-        events = []
-
-        for st, en in works:
-
-            # 日跨ぎ対応
-            s = max(st, day_start)
-            e = min(en, day_end)
-
-            if s >= e:
-                continue
-
-            # 開店
-            events.append((s, +1))
-
-            # 閉店
-            events.append((e, -1))
-
-        # -------------------------
-        # ソート
-        # 同時刻なら閉店を先
-        # -------------------------
-        events.sort(key=lambda x: (x[0], x[1]))
-
-        text = ""
-
-        active = 0
-        segment_start = day_start
-
-        # =========================
-        # 状態遷移
-        # =========================
-        for t, diff in events:
-
-            prev = active
-            active += diff
-
-            # -------------------------
-            # 閉店 → 開店
-            # -------------------------
-            if prev == 0 and active > 0:
-
-                if segment_start < t:
-
-                    end_str = (
-                        "00:00"
-                        if t == day_end
-                        else t.strftime("%H:%M")
-                    )
-
-                    text += (
-                        f"🔴 【閉店】 "
-                        f"{segment_start.strftime('%H:%M')}～"
-                        f"{end_str}\n"
-                    )
-
-                segment_start = t
-
-            # -------------------------
-            # 開店 → 閉店
-            # -------------------------
-            elif prev > 0 and active == 0:
-
-                end_str = (
-                    "00:00"
-                    if t == day_end
-                    else t.strftime("%H:%M")
-                )
-
-                text += (
-                    f"🟢 【開店】 "
-                    f"{segment_start.strftime('%H:%M')}～"
-                    f"{end_str}\n"
-                )
-
-                segment_start = t
-
-        # =========================
-        # 最後の区間
-        # =========================
-
-        # 営業中で終わった
-        if active > 0:
-
-            text += (
-                f"🟢 【開店】 "
-                f"{segment_start.strftime('%H:%M')}～"
-            )
-
-            # 今日以外は00:00まで表示
-            if day_start.date() != now.date():
-                text += "00:00"
-
-            text += "\n"
-
-        # 閉店状態で終わった
-        else:
-
-            if segment_start < day_end:
-
-                text += (
-                    f"🔴 【閉店】 "
-                    f"{segment_start.strftime('%H:%M')}～"
-                )
-
-                # 今日以外
-                if day_start.date() != now.date():
-                    text += "00:00"
-
-                text += "\n"
-
-        # データなし防止
-        if not text:
-            text = "データなし"
-
-        # =========================
-        # Embed
-        # =========================
-        embed = discord.Embed(
-            title=f"📊 開店ログ【{day_start.strftime('%m月%d日')}】",
-            description=text,
-            color=0x2b2d31
-        )
-
-        embeds.append(embed)
-
-    # =========================
-    # 送信
-    # =========================
-    await interaction.response.send_message(
-        embeds=embeds,
-        ephemeral=True
-    )
-@tree.command(name="owner")
-async def owner(interaction: discord.Interaction):
-
-    panel = load_owner_panel()
-
-    # 既存確認
-    if panel:
-
-        try:
-            channel = bot.get_channel(panel["channel_id"])
-
-            if channel:
-                await channel.fetch_message(panel["message_id"])
-
-                await interaction.response.send_message(
-                    "✅ OWNERパネルは既に存在します",
-                    ephemeral=True
-                )
-                return
-
-        except:
-            pass
-
-    embed = discord.Embed(
-        description="読み込み中...",
-        color=0x2b2d31
-    )
-
-    await interaction.response.send_message(
-        embed=embed,
-        view=OwnerRefreshView()
-    )
-
-    msg = await interaction.original_response()
-
-    save_owner_panel(
-        msg.channel.id,
-        msg.id
-    )
-
-    await refresh_owner_panel()
-
-class OwnerRefreshView(discord.ui.View):
-
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(
-        label="🔄 更新",
-        style=discord.ButtonStyle.primary,
-        custom_id="owner_refresh"
-        )
-
-    async def refresh_button(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button
-    ):
-
-        await interaction.response.defer()
-
-        await refresh_everything()
-
-        panel = load_owner_panel()
-
-        channel = bot.get_channel(panel["channel_id"])
-        msg = await channel.fetch_message(panel["message_id"])
-
-        await interaction.edit_original_response(
-            embed=msg.embeds[0],
-            view=self
-        )
-
-
-class BonusView(discord.ui.View):
-
-    def __init__(self, target_id, amount):
-        super().__init__(timeout=None)
-
-        self.target_id = str(target_id)
-        self.amount = amount
-
-    @discord.ui.button(
-        label="💰 受け取る",
-        style=discord.ButtonStyle.success,
-        custom_id="bonus_receive"
-    )
-    async def receive_bonus(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button
-    ):
-
-        # 対象者以外禁止
-        if str(interaction.user.id) != self.target_id:
-            
-            await interaction.response.send_message(
-                "対象者専用です",
-                ephemeral=True
-            )
-            return
-
-        # ボタン無効化
-        button.disabled = True
-
-        try:
-            await interaction.response.edit_message(view=self)
-        except:
-            return
-
-        init_user(interaction.user)
- 
-        uid = str(interaction.user.id)
-
-        # 給料反映
-        data[uid]["pay"] += self.amount
-
-        save_data(data)
-
-        # 全更新
-        await refresh_everything()
-
-        # メッセージ削除
-        try:
-            await interaction.message.delete()
-        except:
-            pass
-
-        # 完了
-        try:
-            await interaction.followup.send(
-                f"✅ ボーナス {yen(self.amount)} を受け取りました",
-                ephemeral=True
-            )
-        except:
-            pass
-
-
-class JobView(discord.ui.View):
-
-    def __init__(self, member: discord.Member):
-        super().__init__(timeout=None)
-        self.member = member
-
-    # ------------------------
-    # パネル生成
-    # ------------------------
-    def build_embed(self):
-        
-        global data
-        data = load_data()
-        
-        uid = str(self.member.id)
-        
-        u = data.get(uid, {})
-
-        # 金額
-        pay = u.get("pay", 0)
-        sales = u.get("sales", 0)
-        total_sales = u.get("total_sales", 0)
-
-        # 勤務時間
-        total = u.get("total_time", 0)
-
-        h = int(total // 3600)
-        m = int((total % 3600) // 60)
-
-        # 履歴
-        history_text = ""
-
-        history = u.get("history", [])
-
-        if history:
-
-            for hst in history[-20:]:
-                
-                try:
-                    # 出勤時間
-                    start = to_jst(
-                        datetime.fromisoformat(hst["start"])
-                    ).strftime("%m/%d %H:%M")
-
-                    # 退勤時間
-                    if hst.get("end"):
-
-                       end = to_jst(
-                           datetime.fromisoformat(hst["end"])
-                        
-                       ).strftime("%m/%d %H:%M")
-
-                    else:
-                        end = "勤務中"
-
-                    history_text += (
-                        f"🟢 出勤：{start}\n"
-                        f"🔴 退勤：{end}\n\n"
-                    )
-
-                except Exception as e:
-                    print(e)
-
-        else:
-            history_text = "記録なし"
-
-        # Embed
-        embed = discord.Embed(
-            color=0x2b2d31
-        )
-
-        embed.description = (
-            f"# 👤 {self.member.display_name}\n\n"
-
-            f"💰 給料\n"
-            f"```yaml\n"
-            f"${pay:,}\n"
-            f"```\n"
-
-            f"🧾 売上\n"
-            f"```yaml\n"
-            f"${sales:,}\n"
-            f"```\n"
-
-            f"📈 総売上\n"
-            f"```yaml\n"
-            f"${total_sales:,}\n"
-            f"```\n"
-
-            f"⏰ 合計出勤時間\n"
-            f"```yaml\n"
-            f"{h}時間{m}分\n"
-            f"```\n"
-
-            f"📋 出退勤記録\n"
-            f"```yaml\n"
-            f"{history_text}"
-            f"```"
-        )
-
-        return embed
-
-    # ------------------------
-    # 売上リセット
-    # ------------------------
-    @discord.ui.button(
-        label="売上リセット",
-        style=discord.ButtonStyle.danger
-    )
-    async def reset_pay(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button
-    ):
-
-        uid = str(self.member.id)
-
-        init_user(self.member)
-
-        data[uid]["pay"] = 0
-        data[uid]["sales"] = 0
-
-        save_data(data)
-
-        await interaction.response.edit_message(
-            embed=self.build_embed(),
-            view=self
-        )
-
-    # ------------------------
-    # 出勤リセット
-    # ------------------------
-    @discord.ui.button(
-        label="出勤リセット",
-        style=discord.ButtonStyle.secondary
-    )
-    async def reset_time(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button
-    ):
-
-        uid = str(self.member.id)
-
-        init_user(self.member)
-
-        data[uid]["total_time"] = 0
-        data[uid]["history"] = []
-
-        save_data(data)
-
-        await interaction.response.edit_message(
-            embed=self.build_embed(),
-            view=self
-        )
-
-
-# ------------------------
-# JOB コマンド
-# ------------------------
-@tree.command(name="job")
-async def job(
-    interaction: discord.Interaction,
-    従業員: discord.Member
-):
-
-    global job_panels
-
-    init_user(従業員)
-
-    view = JobView(従業員)
-
-    await interaction.response.send_message(
-        embed=view.build_embed(),
-        view=view
-    )
-
-    msg = await interaction.original_response()
-
-    job_panels[str(従業員.id)] = {
-        "channel_id": msg.channel.id,
-        "message_id": msg.id
-    }
-
-    save_job_panels()
-
-
-async def roll_dice(interaction, sides):
-
-    result = random.randint(1, sides)
-
-    await interaction.response.send_message(
-        f"🎲 1d{sides}\n結果: {result}"
-    )
-
-
-@tree.command(name="1d2")
-async def dice_1d2(interaction: discord.Interaction):
-    await roll_dice(interaction, 2)
-
-
-@tree.command(name="1d5")
-async def dice_1d5(interaction: discord.Interaction):
-    await roll_dice(interaction, 5)
-
-
-@tree.command(name="1d10")
-async def dice_1d10(interaction: discord.Interaction):
-    await roll_dice(interaction, 10)
-
-
-@tree.command(name="1d15")
-async def dice_1d15(interaction: discord.Interaction):
-    await roll_dice(interaction, 15)
-
-
-@tree.command(name="1d20")
-async def dice_1d20(interaction: discord.Interaction):
-    await roll_dice(interaction, 20)
-
-
-@tree.command(name="1d100")
-async def dice_1d100(interaction: discord.Interaction):
-    await roll_dice(interaction, 100)
-
-@tree.command(name="bonus")
-async def bonus(
-    interaction: discord.Interaction,
-    対象者: discord.Member,
-    金額: int,
-    備考: str
-):
-
-    embed = discord.Embed(
-        title="🎁 BONUS",
-        color=0xf1c40f
-    )
-
-    embed.description = (
-        f"👤 対象者\n"
-        f"{対象者.mention}\n\n"
-
-        f"💰 金額\n"
-        f"```yaml\n"
-        f"{yen(金額)}\n"
-        f"```\n"
-
-        f"📝 備考\n"
-        f"```yaml\n"
-        f"{備考}\n"
-        f"```"
-    )
-
-    await interaction.response.send_message(
-        embed=embed,
-        view=BonusView(対象者.id, 金額)
-    )
 # ------------------------
 # 起動
 # ------------------------
 @bot.event
 async def on_ready():
     global work_view
-
     print("ログイン完了")
 
     fix_to_jst()
 
     work_view = WorkView()
     bot.add_view(work_view)
-    bot.add_view(OwnerRefreshView())
-    bot.add_view(BonusView(0,0))
-
     await tree.sync()
     await update_status()
-
-    if not update_status.is_running():
-        update_status.start()
-
-    if not auto_refresh_panels.is_running():
-        auto_refresh_panels.start()
-
-    if not auto_backup.is_running():
-        auto_backup.start()
+    update_status.start()
 
     print("起動OK2")
 
-
-keep_alive()
 bot.run(os.getenv("TOKEN"))
+
+
