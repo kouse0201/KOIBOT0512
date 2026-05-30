@@ -202,7 +202,7 @@ def fix_to_jst():
 def get_working_count():
     return sum(1 for u in data.values() if u.get("is_working"))
 
-@tasks.loop(seconds=10)
+@tasks.loop(seconds=20)
 async def update_status():
     count = get_working_count()
 
