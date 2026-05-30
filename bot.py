@@ -362,7 +362,7 @@ async def auto_backup():
         await send_backup()
 
 
-@tasks.loop(seconds=10)
+@tasks.loop(seconds=15)
 async def update_status():
     count = get_working_count()
 
