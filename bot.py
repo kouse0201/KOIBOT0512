@@ -118,7 +118,7 @@ async def on_message(message):
         async with message.channel.typing():
 
             response = ai.chat.completions.create(
-                model="gpt-5.5",
+                model="gpt-4o-mini",
                 messages=messages,
                 temperature=0.9
             )
@@ -133,11 +133,12 @@ async def on_message(message):
         await message.reply(reply)
 
     except Exception as e:
-
-        print("AIエラー:", e)
-
+        
+        import traceback
+        traceback.print_exc()
+        
         await message.reply(
-            "なんや知らんけど失敗しましたえ。"
+            f"AIエラー:\n```{e}```"
         )
 
     await bot.process_commands(message)
