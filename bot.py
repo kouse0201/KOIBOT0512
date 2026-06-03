@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands, tasks
+from discord import app_commands
 import json
 from datetime import datetime, timedelta, timezone
 import os
@@ -7,12 +8,139 @@ import random
 from flask import Flask
 from threading import Thread
 
+from openai import OpenAI
+
+# ======================================
+# 環境変数
+# ======================================
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# ======================================
+# OpenAI
+# ======================================
+
+ai = OpenAI(api_key=OPENAI_API_KEY)
+
+
+
+# ======================================
+# 会話履歴
+# ======================================
+
+memory = {}
+
+# ======================================
+# システムプロンプト
+# ======================================
+
+SYSTEM_PROMPT = """
+あなたは京都弁で話すDiscord Botです。
+
+ルール:
+- 基本は京都弁
+- 丁寧寄り
+- よくないことには辛辣
+- 遠回しに圧をかける
+- 無駄に長文にしない
+- メンションされた時だけ返答する
+- 解決策をちゃんと提示する
+- 何気ない会話の返答も行う
+
+返答例:
+
+「まぁ好きにしはったらええんちゃいます？」
+「ようそんなこと思いつかはりますなぁ」
+「それは流石に品がありまへんな」
+"""
+
+
+
+# ======================================
+# メッセージ受信
+# ======================================
+
+
 
 
 intents = discord.Intents.default()
+
 intents.members = True
+intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 app = Flask(__name__)
+
+@bot.event
+async def on_message(message):
+
+    # Bot無視
+    if message.author.bot:
+        return
+
+    # メンションされてないなら無視
+    if bot.user not in message.mentions:
+        return
+
+    try:
+
+        # メンション除去
+        content = message.content.replace(
+            f"<@{bot.user.id}>",
+            ""
+        ).replace(
+            f"<@!{bot.user.id}>",
+            ""
+        ).strip()
+
+        if not content:
+            await message.reply("なんどす？")
+            return
+
+        user_id = str(message.author.id)
+
+        if user_id not in memory:
+            memory[user_id] = []
+
+        memory[user_id].append({
+            "role": "user",
+            "content": content
+        })
+
+        memory[user_id] = memory[user_id][-10:]
+
+        messages = [
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT
+            }
+        ] + memory[user_id]
+
+        async with message.channel.typing():
+
+            response = ai.chat.completions.create(
+                model="gpt-5.5",
+                messages=messages,
+                temperature=0.9
+            )
+
+        reply = response.choices[0].message.content
+
+        memory[user_id].append({
+            "role": "assistant",
+            "content": reply
+        })
+
+        await message.reply(reply)
+
+    except Exception as e:
+
+        print("AIエラー:", e)
+
+        await message.reply(
+            "なんや知らんけど失敗しましたえ。"
+        )
+
+    await bot.process_commands(message)
 
 @app.route("/")
 def home():
@@ -25,6 +153,44 @@ def keep_alive():
     t = Thread(target=run_web)
     t.start()
 tree = bot.tree
+
+@tree.command(name="ms", description="メッセージ送信")
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(
+    target_channel="送信先",
+    message="送信内容",
+    user="メンションユーザー",
+    role="メンションロール"
+)
+async def ms(
+    interaction: discord.Interaction,
+    target_channel: discord.TextChannel | discord.Thread,
+    message: str,
+    user: discord.Member = None,
+    role: discord.Role = None
+):
+
+    parts = []
+
+    # ユーザーメンション
+    if user:
+        parts.append(user.mention)
+
+    # ロールメンション
+    if role:
+        parts.append(role.mention)
+
+    # 本文
+    parts.append(message)
+
+    send_text = " ".join(parts)
+
+    await target_channel.send(send_text)
+
+    await interaction.response.send_message(
+        "送信しましたえ。",
+        ephemeral=True
+    )
 
 BACKUP_CHANNEL_ID = 1490323490601959554
 
@@ -444,8 +610,7 @@ MENU = {
         "6月限定梅雨雨巡りセット":{"price":15000,"cost":6500},
         "梅雨空クリームソーダ":{"price":8000,"cost":3250},
         "雨音手毬寿司":{"price":8000,"cost":3250},
-        "6月こいくん人形":{"price":8000,"cost":3750},
-        "5月限定こいのぼりセット":{"price":12000,"cost":6775},
+        "5月限定こいのぼりセット":{"price":12000,"cost":5500},
         "春の桜づくしセット":{"price":16000,"cost":6625},
         "桜香る春御膳":{"price":6000,"cost":1500},
         "湯けむり桜ソーダ":{"price":7000,"cost":3125},
@@ -460,7 +625,10 @@ MENU = {
         "緑の刀":{"price":0,"cost":500000},
         "黄の刀":{"price":0,"cost":500000},
         "紫の刀":{"price":0,"cost":500000},
-        "千年鯛のお寿司":{"price":4500,"cost":2500},
+        "千年鯛のお寿司":{"price":8000,"cost":2500},
+        "シマアジのお寿司":{"price":8000,"cost":3750},
+        "ホタルイカの軍艦":{"price":8000,"cost":2250},
+        "ゆず塩炙りチーズ生ハムアボカド軍艦":{"price":8000,"cost":3750},
         },
     "移動販売メニュー":{
         "気まぐれ出張販売セット(移動)":{"price":7000,"cost":3875,"mobile":True},
@@ -7385,6 +7553,7 @@ async def bonus(
 # ------------------------
 @bot.event
 async def on_ready():
+
     global work_view
 
     print("ログイン完了")
@@ -7392,6 +7561,7 @@ async def on_ready():
     fix_to_jst()
 
     work_view = WorkView()
+
     bot.add_view(work_view)
     bot.add_view(OwnerRefreshView())
     bot.add_view(BonusView(0,0))
