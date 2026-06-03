@@ -16,6 +16,20 @@ from openai import OpenAI
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+
+DATA_FILE = "data.json"
+
+def load_memory():
+    if not os.path.exists(DATA_FILE):
+        return {"memories": []}
+
+    with open(DATA_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_memory(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
 # ======================================
 # OpenAI
 # ======================================
@@ -28,7 +42,7 @@ ai = OpenAI(api_key=OPENAI_API_KEY)
 # 会話履歴
 # ======================================
 
-memory = {}
+memory = load_memory()
 
 # ======================================
 # システムプロンプト
@@ -98,22 +112,40 @@ async def on_message(message):
 
         user_id = str(message.author.id)
 
-        if user_id not in memory:
-            memory[user_id] = []
-
-        memory[user_id].append({
+        if "memories" not in memory:
+            memory["memories"] = {}
+        
+        init_user(message.author)
+        
+        ai_memory = data[user_id]["ai_memory"]
+        
+        ai_memory.append({
             "role": "user",
             "content": content
         })
 
-        memory[user_id] = memory[user_id][-10:]
+        # 最大20件
+        data[user_id]["ai_memory"] = ai_memory[-20:]
+        
+        save_data(data)
 
+        profile = data[user_id].get("profile", {})
+        
+        profile_text = json.dumps(
+            profile,
+            ensure_ascii=False
+        )
+        
         messages = [
             {
                 "role": "system",
-                "content": SYSTEM_PROMPT
+                "content":
+                SYSTEM_PROMPT +
+                f"\n\nユーザー情報:\n{profile_text}"
+            
             }
-        ] + memory[user_id]
+            
+        ] + data[user_id]["ai_memory"]
 
         async with message.channel.typing():
 
@@ -125,10 +157,14 @@ async def on_message(message):
 
         reply = response.choices[0].message.content
 
-        memory[user_id].append({
+        data[user_id]["ai_memory"].append({
             "role": "assistant",
             "content": reply
         })
+
+        data[user_id]["ai_memory"] = data[user_id]["ai_memory"][-20:]
+
+        save_data(data)
 
         await message.reply(reply)
 
@@ -256,7 +292,10 @@ def init_user(user):
         "sales":0,        # ←未受取売上
         "total_sales":0,  # ←総売上
 
-        "items":{}
+        "items":{},
+
+        "ai_memory": [],
+        "profile": {}
     }
 
     for k,v in defaults.items():
