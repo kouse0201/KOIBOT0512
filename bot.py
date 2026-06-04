@@ -276,6 +276,8 @@ async def send_backup():
 
 async def refresh_job_panel(member_id):
 
+    print("refresh_job_panel:", member_id)
+
     global data
     global job_panels
 
@@ -315,10 +317,14 @@ async def refresh_job_panel(member_id):
 
         view = JobView(member)
 
+        print("編集開始")
+
         await msg.edit(
             embed=view.build_embed(),
             view=view
         )
+
+        print("編集成功")
 
     except Exception:
         print("JOB更新失敗")
@@ -7743,7 +7749,6 @@ async def bonus(
         embed=embed,
         view=BonusView(対象者.id, 金額)
     )
-
 @tree.command(name="setjob")
 @app_commands.checks.has_permissions(
     administrator=True
@@ -7752,19 +7757,28 @@ async def setjob(
     interaction: discord.Interaction
 ):
 
+    print("===== SETJOB開始 =====")
+
     await interaction.response.defer(
         ephemeral=True
     )
 
+    print("defer成功")
+
+    print("パネル削除開始")
     await clear_all_fixed_panels()
+    print("パネル削除完了")
 
     for name, config in JOB_CONFIG.items():
+
+        print("処理中:", name)
 
         channel = bot.get_channel(
             config["channel_id"]
         )
 
         if not channel:
+            print("channel取得失敗:", config["channel_id"])
             continue
 
         member = interaction.guild.get_member(
@@ -7772,52 +7786,53 @@ async def setjob(
         )
 
         if not member:
+            print("member取得失敗:", config["user_id"])
             continue
 
         init_user(member)
 
-        #
-        # JOBパネル
-        #
         view = JobView(member)
+
+        print("JOBパネル作成:", member.display_name)
 
         job_msg = await channel.send(
             embed=view.build_embed(),
             view=view
         )
 
+        print("JOB送信成功:", job_msg.id)
+
         job_panels[str(member.id)] = {
             "channel_id": channel.id,
             "message_id": job_msg.id
         }
 
-        print(
-            "SETJOB登録",
-            member.id,
-            channel.id,
-            job_msg.id
-        )
-
-        #
-        # 勤務パネル
-        #
         panel_msg = await channel.send(
             embed=work_view.embed(),
             view=work_view
         )
+
+        print("勤務パネル送信成功:", panel_msg.id)
 
         panel_messages.append({
             "channel_id": channel.id,
             "message_id": panel_msg.id
         })
 
+    print("保存開始")
+
     save_job_panels()
     save_panels()
+
+    print("保存完了")
 
     await interaction.followup.send(
         "業務パネルを再生成しましたえ。",
         ephemeral=True
     )
+
+    print("===== SETJOB終了 =====")
+
 
 # ------------------------
 # 起動
