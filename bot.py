@@ -8,6 +8,7 @@ import random
 from flask import Flask
 from threading import Thread
 import traceback
+import asyncio
 
 
 
@@ -276,31 +277,36 @@ async def send_backup():
 
 async def refresh_job_panel(member_id):
 
-    uid = str(member_id)
-
-    panel = job_panels.get(uid)
-    if not panel:
-        return
-
-    channel = bot.get_channel(panel["channel_id"])
-    if not channel:
-        return
-
     try:
+        uid = str(member_id)
+
+        panel = job_panels.get(uid)
+        if not panel:
+            return
+
+        channel = bot.get_channel(panel["channel_id"])
+        if not channel:
+            print("JOB: channelなし")
+            return
+
         msg = await channel.fetch_message(panel["message_id"])
-    except:
-        return
 
-    member = msg.guild.get_member(int(uid))
-    if not member:
-        return
+        member = channel.guild.get_member(int(uid))
+        if not member:
+            print("JOB: memberなし", uid)
+            return
 
-    view = JobView(member)
+        view = JobView(member)
 
-    await msg.edit(
-        embed=view.build_embed(),
-        view=view
-    )
+        await msg.edit(
+            embed=view.build_embed(),
+            view=view
+        )
+
+        print("JOB更新成功:", uid)
+
+    except Exception as e:
+        print("JOB更新失敗:", uid, e)
         
 async def refresh_all_panels():
 
@@ -490,6 +496,7 @@ async def auto_backup():
 
 
 @tasks.loop(seconds=15)
+
 async def update_status():
     count = get_working_count()
 
@@ -6305,7 +6312,7 @@ async def refresh_owner_panel():
         print("OWNER更新失敗:", e)
 
 
-@tasks.loop(seconds=5)
+@tasks.loop(seconds=15)
 async def auto_refresh_panels():
 
     await refresh_owner_panel()
@@ -6319,8 +6326,10 @@ async def refresh_everything():
     await refresh_owner_panel()
 
     # JOB
-    for uid in list(job_panels.keys()):
-        await refresh_job_panel(uid)
+    await asyncio.gather(
+        *(refresh_job_panel(uid) for uid in list(job_panels.keys())),
+        return_exceptions=True
+    )
 
         try:
             await refresh_job_panel(uid)
