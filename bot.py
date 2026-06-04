@@ -65,6 +65,7 @@ async def ms(
         parts.append(role.mention)
 
     # 本文
+    message = message.replace("\\n", "\n")
     parts.append(message)
 
     send_text = "\n".join(parts)
