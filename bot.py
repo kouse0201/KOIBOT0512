@@ -67,9 +67,9 @@ async def ms(
     # 本文
     message = message.replace("\\n", "\n")
     parts.append(message)
-
+    
     send_text = "\n".join(parts)
-
+    
     await target_channel.send(
         send_text,
         allowed_mentions=discord.AllowedMentions(
@@ -79,10 +79,10 @@ async def ms(
         )
     )
 
-    await interaction.response.send_message(
-        "送信しましたえ。",
-        ephemeral=True
-    )
+await interaction.response.send_message(
+    "送信しましたえ。",
+    ephemeral=True
+)
 
 BACKUP_CHANNEL_ID = 1490323490601959554
 
