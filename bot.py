@@ -7450,35 +7450,39 @@ async def clear_all_fixed_panels():
     global job_panels
     global panel_messages
 
-    # JOBパネル削除
-    for uid, panel in list(job_panels.items()):
+    for config in JOB_CONFIG.values():
+
+        channel = bot.get_channel(
+            config["channel_id"]
+        )
+
+        if not channel:
+            continue
 
         try:
-            channel = bot.get_channel(panel["channel_id"])
 
-            if channel:
-                msg = await channel.fetch_message(
-                    panel["message_id"]
-                )
-                await msg.delete()
+            async for msg in channel.history(limit=100):
 
-        except:
-            pass
+                if msg.author != bot.user:
+                    continue
 
-    # 勤務パネル削除
-    for panel in list(panel_messages):
+                # JOBパネル
+                if msg.components:
+                    await msg.delete()
+                    continue
 
-        try:
-            channel = bot.get_channel(panel["channel_id"])
+                # 勤務パネル
+                if msg.embeds:
 
-            if channel:
-                msg = await channel.fetch_message(
-                    panel["message_id"]
-                )
-                await msg.delete()
+                    embed = msg.embeds[0]
 
-        except:
-            pass
+                    if (
+                        embed.title == "📋勤務パネル"
+                    ):
+                        await msg.delete()
+
+        except Exception as e:
+            print("削除失敗", e)
 
     job_panels.clear()
     panel_messages.clear()
