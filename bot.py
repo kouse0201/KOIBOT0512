@@ -7643,6 +7643,9 @@ async def on_ready():
 
     print("起動OK2")
 
+    print("===== JOB PANELS =====")
+    print(job_panels)
+    print("=======================")
 
 keep_alive()
 
