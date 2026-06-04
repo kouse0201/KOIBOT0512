@@ -67,7 +67,7 @@ async def ms(
     # 本文
     parts.append(message)
 
-    send_text = " ".join(parts)
+    send_text = "\n".join(parts)
 
     await target_channel.send(
         send_text,
