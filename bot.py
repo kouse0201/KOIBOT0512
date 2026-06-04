@@ -6310,6 +6310,7 @@ async def auto_refresh_panels():
 
     await refresh_owner_panel()
     await refresh_everything()
+    
 
             
 async def refresh_everything():
@@ -6319,6 +6320,7 @@ async def refresh_everything():
 
     # JOB
     for uid in list(job_panels.keys()):
+        await refresh_job_panel(uid)
 
         try:
             await refresh_job_panel(uid)
