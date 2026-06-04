@@ -79,10 +79,10 @@ async def ms(
         )
     )
 
-await interaction.response.send_message(
-    "送信しましたえ。",
-    ephemeral=True
-)
+    await interaction.response.send_message(
+        "送信しましたえ。",
+        ephemeral=True
+    )
 
 BACKUP_CHANNEL_ID = 1490323490601959554
 
