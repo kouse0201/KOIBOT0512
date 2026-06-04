@@ -69,7 +69,14 @@ async def ms(
 
     send_text = " ".join(parts)
 
-    await target_channel.send(send_text)
+    await target_channel.send(
+        send_text,
+        allowed_mentions=discord.AllowedMentions(
+            everyone=True,
+            roles=True,
+            users=True
+        )
+    )
 
     await interaction.response.send_message(
         "送信しましたえ。",
@@ -77,6 +84,80 @@ async def ms(
     )
 
 BACKUP_CHANNEL_ID = 1490323490601959554
+
+
+JOB_CONFIG = {
+    "🛒業務：シグなる": {
+        "channel_id": 1503009789901541376,
+        "user_id": 1369075224426844202
+    },
+
+    "🛒業務：くらげ": {
+        "channel_id": 1503014097317396600,
+        "user_id": 1109819930246918225
+    },
+    
+    "🛒業務：海": {
+        "channel_id": 1503014172282065020,
+        "user_id": 431434357085962240
+    },
+    
+    "🛒業務：そうた": {
+        "channel_id": 1503014230872293516,
+        "user_id": 1094592548208656474
+    },
+    
+    "🛒業務：眠斗": {
+        "channel_id": 1503009358936805446,
+        "user_id": 800345977864192031
+    },
+    
+    "🛒業務：アップル": {
+        "channel_id": 1503014297033511005,
+        "user_id": 713999033835847680
+    },
+    
+    "🛒業務：ピンキー": {
+        "channel_id": 1503014470849531964,
+        "user_id": 1016648308934066238
+    },
+    
+    "🛒業務：いろは": {
+        "channel_id": 1503014564709531771,
+        "user_id": 1116671861267365949
+    },
+    
+    "🛒業務：鏡花": {
+        "channel_id": 1503014658544505024,
+        "user_id": 646666452916633621
+    },
+    
+    "🛒業務：はる": {
+        "channel_id": 1503014717768204429,
+        "user_id": 890903179577921536
+    },
+    
+    "🛒業務：四ノ宮": {
+        "channel_id": 1503014780250751107,
+        "user_id": 627113213313417216
+    },
+    
+    "🛒業務：しまかぜ": {
+        "channel_id": 1503014984328810508,
+        "user_id": 1122462469659578398
+    },
+    
+    "🛒業務：ららららい": {
+        "channel_id": 1507722681951453346,
+        "user_id": 604640387042115605
+    },
+    
+    "🛒業務：欠員": {
+        "channel_id": 1503014919707299980,
+        "user_id": 1369075224426844202
+    },
+}
+
 
 # ------------------------
 # JST
@@ -7364,6 +7445,46 @@ async def job(
 
     save_job_panels()
 
+async def clear_all_fixed_panels():
+
+    global job_panels
+    global panel_messages
+
+    # JOBパネル削除
+    for uid, panel in list(job_panels.items()):
+
+        try:
+            channel = bot.get_channel(panel["channel_id"])
+
+            if channel:
+                msg = await channel.fetch_message(
+                    panel["message_id"]
+                )
+                await msg.delete()
+
+        except:
+            pass
+
+    # 勤務パネル削除
+    for panel in list(panel_messages):
+
+        try:
+            channel = bot.get_channel(panel["channel_id"])
+
+            if channel:
+                msg = await channel.fetch_message(
+                    panel["message_id"]
+                )
+                await msg.delete()
+
+        except:
+            pass
+
+    job_panels.clear()
+    panel_messages.clear()
+
+    save_job_panels()
+    save_panels()
 
 async def roll_dice(interaction, sides):
 
@@ -7435,6 +7556,75 @@ async def bonus(
         embed=embed,
         view=BonusView(対象者.id, 金額)
     )
+
+@tree.command(name="setjob")
+@app_commands.checks.has_permissions(
+    administrator=True
+)
+async def setjob(
+    interaction: discord.Interaction
+):
+
+    await interaction.response.defer(
+        ephemeral=True
+    )
+
+    await clear_all_fixed_panels()
+
+    for name, config in JOB_CONFIG.items():
+
+        channel = bot.get_channel(
+            config["channel_id"]
+        )
+
+        if not channel:
+            continue
+
+        member = interaction.guild.get_member(
+            config["user_id"]
+        )
+
+        if not member:
+            continue
+
+        init_user(member)
+
+        #
+        # JOBパネル
+        #
+        view = JobView(member)
+
+        job_msg = await channel.send(
+            embed=view.build_embed(),
+            view=view
+        )
+
+        job_panels[str(member.id)] = {
+            "channel_id": channel.id,
+            "message_id": job_msg.id
+        }
+
+        #
+        # 勤務パネル
+        #
+        panel_msg = await channel.send(
+            embed=work_view.embed(),
+            view=work_view
+        )
+
+        panel_messages.append({
+            "channel_id": channel.id,
+            "message_id": panel_msg.id
+        })
+
+    save_job_panels()
+    save_panels()
+
+    await interaction.followup.send(
+        "業務パネルを再生成しましたえ。",
+        ephemeral=True
+    )
+
 # ------------------------
 # 起動
 # ------------------------
