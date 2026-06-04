@@ -6322,22 +6322,21 @@ async def auto_refresh_panels():
             
 async def refresh_everything():
 
-    # OWNER
-    await refresh_owner_panel()
+    try:
+        # OWNER
+        await refresh_owner_panel()
 
-    # JOB
-    await asyncio.gather(
-        *(refresh_job_panel(uid) for uid in list(job_panels.keys())),
-        return_exceptions=True
-    )
+        # JOB（並列更新）
+        await asyncio.gather(
+            *(refresh_job_panel(uid) for uid in list(job_panels.keys())),
+            return_exceptions=True
+        )
 
-        try:
-            await refresh_job_panel(uid)
-        except Exception as e:
-            print("JOB更新失敗:", e)
+        # 勤務パネル
+        await refresh_all_panels()
 
-    # 勤務パネル
-    await refresh_all_panels()
+    except Exception as e:
+        print("refresh_everything全体エラー:", e)
 
 @tree.command(name="panel")
 async def panel(interaction):
