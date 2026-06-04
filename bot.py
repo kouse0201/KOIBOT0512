@@ -7619,6 +7619,7 @@ async def on_ready():
 
     global work_view
 
+    print("TEST ON READY")
     print("ログイン完了")
 
     fix_to_jst()
