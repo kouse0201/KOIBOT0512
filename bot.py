@@ -620,12 +620,7 @@ MENU = {
     }
 }
 
-@tree.command(name="panel")
-async def panel(interaction):
-    await interaction.response.send_message(
-        embed=work_view.embed(interaction.guild),
-        view=work_view
-    )
+
 def build_status(self):
     text = "【現在の条件】\n"
 
