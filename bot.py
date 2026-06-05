@@ -812,7 +812,7 @@ SEARCH_MENU = {
             "使用速度": "遅",
             "移動上昇": False
         },
-        "こいくん人形": {
+        "こいくん人形シリーズ": {
             "金額": 5500,
             "体力": 0,
             "アーマー": 30,
@@ -1206,7 +1206,7 @@ SEARCH_MENU = {
             "金額": 6800,
             "体力": 0,
             "アーマー": 40,
-            "満腹": 15  ,
+            "満腹": 15,
             "水分": "0",
             "ストレス": 0,
             "使用速度": "普",
@@ -1252,6 +1252,66 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": True
         },
+        "梅雨空クリームソーダ": {
+            "金額": 8000,
+            "体力": "40",
+            "アーマー": "0",
+            "満腹": 0,
+            "水分": 30,
+            "ストレス": "20",
+            "使用速度": "普",
+            "移動上昇": False
+         },
+        "雨音手毬": {
+            "金額": 8000,
+            "体力": "0",
+            "アーマー": "40",
+            "満腹": 30,
+            "水分": 0,
+            "ストレス": "20",
+            "使用速度": "普",
+            "移動上昇": False
+         },
+        "千年鯛のお寿司": {
+            "金額": 7000,
+            "体力": "0",
+            "アーマー": "15",
+            "満腹": 35,
+            "水分": 0,
+            "ストレス": "35",
+            "使用速度": "早",
+            "移動上昇": False
+         },
+        "ほたるいかの軍艦": {
+            "金額": 8000,
+            "体力": "20",
+            "アーマー": "15",
+            "満腹": 20,
+            "水分": 0,
+            "ストレス": "-20",
+            "使用速度": "早",
+            "移動上昇": False
+         },
+        "ゆず塩炙りチーズ生ハムアボカド軍艦": {
+            "金額": 8000,
+            "体力": "0",
+            "アーマー": "10",
+            "満腹": 40,
+            "水分": 20,
+            "ストレス": "30",
+            "使用速度": "普",
+            "移動上昇": True
+         },
+        "シマアジのお寿司": {
+            "金額": 8000,
+            "体力": "0",
+            "アーマー": "50",
+            "満腹": 40,
+            "水分": 10,
+            "ストレス": "0",
+            "使用速度": "普",
+            "移動上昇": False
+         },
     },
     "パン屋": {
             "あまがえるクリームパン": {
@@ -1606,6 +1666,26 @@ SEARCH_MENU = {
             "使用速度": "遅",
             "移動上昇": False
         },
+        "PROCOPIO AQUA 10回": {
+            "金額": 80000,
+            "体力": 0,
+            "アーマー": 40,
+            "満腹": 0,
+            "水分": "-20",
+            "ストレス": 40,
+            "使用速度": "遅",
+            "移動上昇": False
+        },
+        "巣鴨 北メカ 10回": {
+            "金額": 65000,
+            "体力": 0,
+            "アーマー": 35,
+            "満腹": 0,
+            "水分": "-10",
+            "ストレス": 35,
+            "使用速度": "遅",
+            "移動上昇": False
+        },
     },
     "PIPEDOWN-South-": {
         "ノーマル 10回": {
@@ -1766,6 +1846,16 @@ SEARCH_MENU = {
             "水分": 0,
             "ストレス": 0,
             "使用速度": "早",
+            "移動上昇": True
+        },
+        "Pearls of Pirates 10回": {
+            "金額": 80000,
+            "体力": 0,
+            "アーマー": 15,
+            "満腹": 0,
+            "水分": 0,
+            "ストレス": 30,
+            "使用速度": "普",
             "移動上昇": True
         },
     },
@@ -2331,6 +2421,17 @@ SEARCH_MENU = {
             "ストレス": 40,
             "使用速度": "早",
             "移動上昇": False
+        },
+        "雨音アイス": {
+            "金額": 7000,
+            "体力": 0,
+            "アーマー": 0,
+            "満腹": 30,
+            "水分": "-10",
+            "ストレス": 30,
+            "使用速度": "早",
+            "移動上昇": False
+        },
     },
     "Mystic Spells": {
         "ポーション": {
@@ -3147,6 +3248,26 @@ SEARCH_MENU = {
             "使用速度": "遅",
             "移動上昇": False
         },
+        "オオカミカップケーキ 3回": {
+            "金額": 48000,
+            "体力": 0,
+            "アーマー": 35,
+            "満腹": 15,
+            "水分": 0,
+            "ストレス": 20,
+            "使用速度": "早",
+            "移動上昇": True
+        },
+        "モンキーバナナパフェ 2回": {
+            "金額": 35000,
+            "体力": 0,
+            "アーマー": 50,
+            "満腹": 20,
+            "水分": 0,
+            "ストレス": 50,
+            "使用速度": "普",
+            "移動上昇": False
+        },
     },
     "ラーメン屋": {
         "マシマシラーメン": {
@@ -3492,87 +3613,87 @@ SEARCH_MENU = {
     },
     "Vintage Cafe": {
         "ホットORアイスティー": {
-            "金額": 2750,
+            "金額": 3000,
             "体力": 0,
             "アーマー": 0,
             "満腹": 0,
             "水分": 15,
             "ストレス": 20,
-            "使用速度": "普",
+            "使用速度": "早",
             "移動上昇": False
         },
         "カフェラテ": {
-            "金額": 3000,
+            "金額": 4000,
             "体力": 0,
             "アーマー": 0,
             "満腹": 0,
             "水分": 20,
             "ストレス": 20,
-            "使用速度": "普",
+            "使用速度": "早",
             "移動上昇": False
         },        
         "ココア": {
-            "金額": 3000,
+            "金額": 4000,
             "体力": 0,
             "アーマー": 0,
             "満腹": 0,
             "水分": 15,
             "ストレス": 25,
-            "使用速度": "普",
+            "使用速度": "早",
             "移動上昇": False
         },        
         "ロイヤルミルクティー": {
-            "金額": 3000,
+            "金額": 4000,
             "体力": 0,
             "アーマー": 0,
             "満腹": 0,
             "水分": 15,
             "ストレス": 20,
-            "使用速度": "普",
+            "使用速度": "早",
             "移動上昇": False
         },        
         "カフェモカ": {
-            "金額": 3500,
+            "金額": 4500,
             "体力": 0,
             "アーマー": 0,
             "満腹": 0,
             "水分": 20,
             "ストレス": 30,
-            "使用速度": "普",
+            "使用速度": "早",
             "移動上昇": False
         },        
         "キャラメルラテ": {
-            "金額": 3500,
+            "金額": 4500,
             "体力": 0,
             "アーマー": 0,
             "満腹": 0,
             "水分": 20,
             "ストレス": 30,
-            "使用速度": "普",
+            "使用速度": "早",
             "移動上昇": False
         },        
         "メープルラテ": {
-            "金額": 3500,
+            "金額": 4500,
             "体力": 0,
             "アーマー": 0,
             "満腹": 0,
             "水分": 20,
             "ストレス": 30,
-            "使用速度": "普",
+            "使用速度": "早",
             "移動上昇": False
         },
         "ハニーラテ": {
-            "金額": 3500,
+            "金額": 4500,
             "体力": 0,
             "アーマー": 0,
             "満腹": 0,
             "水分": 20,
             "ストレス": 30,
-            "使用速度": "普",
+            "使用速度": "早",
             "移動上昇": False
         },       
         "ストロベリーホワイトモカ": {
-            "金額": 4250,
+            "金額": 6000,
             "体力": 0,
             "アーマー": 0,
             "満腹": 0,
@@ -3582,17 +3703,17 @@ SEARCH_MENU = {
             "移動上昇": False
         },       
         "抹茶ラテ": {
-            "金額": 4250,
+            "金額": 50000,
             "体力": 0,
             "アーマー": 20,
             "満腹": 0,
             "水分": 15,
             "ストレス": 10,
-            "使用速度": "普",
+            "使用速度": "早",
             "移動上昇": False
         },       
         "ナポリタン": {
-            "金額": 5500,
+            "金額": 6000,
             "体力": 0,
             "アーマー": 35,
             "満腹": 40,
@@ -3602,7 +3723,7 @@ SEARCH_MENU = {
             "移動上昇": False
         },       
         "明太子パスタ": {
-            "金額": 5500,
+            "金額": 6000,
             "体力": 0,
             "アーマー": 35,
             "満腹": 40,
@@ -3612,7 +3733,7 @@ SEARCH_MENU = {
             "移動上昇": False
         },
         "ペペロンチーノ": {
-            "金額": 5500,
+            "金額": 6000,
             "体力": 0,
             "アーマー": 35,
             "満腹": 40,
@@ -3622,13 +3743,13 @@ SEARCH_MENU = {
             "移動上昇": False
         },
         "葉巻": {
-            "金額": 1750,
+            "金額": 2000,
             "体力": 0,
             "アーマー": 0,
             "満腹": 0,
             "水分": "-5",
             "ストレス": 50,
-            "使用速度": "普",
+            "使用速度": "遅",
             "移動上昇": False
         },
         "百味ビーンズ": {
@@ -3711,8 +3832,38 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
+        "梟の雨宿りパフェ": {
+            "金額": 15000,
+            "体力": 0,
+            "アーマー": 30,
+            "満腹": 40,
+            "水分": 40,
+            "ストレス": 20,
+            "使用速度": "普",
+            "移動上昇": False
+        },
+        "メンソール葉巻": {
+            "金額": 5000,
+            "体力": 0,
+            "アーマー": 35,
+            "満腹": 0,
+            "水分": "-5",
+            "ストレス": 5,
+            "使用速度": "遅",
+            "移動上昇": False
+        },
+        "クラフトビール": {
+            "金額": 4000,
+            "体力": 0,
+            "アーマー": 0,
+            "満腹": 0,
+            "水分": 30,
+            "ストレス": 30,
+            "使用速度": "早",
+            "移動上昇": False
+        },
     },
-    "burger shot": {
+    "Burger shot": {
         "ハンバーガー": {
             "金額": 4000,
             "体力": 0,
@@ -4712,7 +4863,7 @@ SEARCH_MENU = {
             "体力": 0,
             "アーマー": 0,
             "満腹": 15,
-            "水分": 15 ,
+            "水分": 15,
             "ストレス": 0,
             "使用速度": "早",
             "移動上昇": False
@@ -5543,6 +5694,16 @@ SEARCH_MENU = {
             "使用速度": "普",
             "移動上昇": False
         },
+        "星降るにゃんクレープ": {
+            "金額": 5000,
+            "体力": 0,
+            "アーマー": 0,
+            "満腹": 20,
+            "水分": 20,
+            "ストレス": 30,
+            "使用速度": "早",
+            "移動上昇": False
+        },
     },
     "Spirinkle Cake Pop": {
         "ショートケーキ": {
@@ -5805,8 +5966,7 @@ SEARCH_MENU = {
             "使用速度": "早",
             "移動上昇": False
         },
-    },
-  }
+    }
 }
 def format_effects(eff):
     text = ""
@@ -6092,8 +6252,9 @@ class WorkView(discord.ui.View):
         super().__init__(timeout=None)
 
     def embed(self):
-        working=[]
-        for uid,u in data.items():
+        working = []
+
+        for uid, u in data.items():
             if u.get("is_working"):
                 name = u.get("name") or "不明"
                 st = u.get("start_time")
@@ -6114,81 +6275,70 @@ class WorkView(discord.ui.View):
 
     @discord.ui.button(label="出勤", style=discord.ButtonStyle.success, custom_id="start")
     async def start(self, interaction, button):
+
         init_user(interaction.user)
         uid = str(interaction.user.id)
+
         now = datetime.now(timezone.utc).astimezone(JST)
 
         data[uid]["is_working"] = True
         data[uid]["start_time"] = now.isoformat()
 
-        # 出勤履歴を即追加
         data[uid]["history"].append({
             "start": now.isoformat(),
             "end": None
         })
 
         save_data(data)
-        await trigger_refresh()
-
-        # ★ jobパネル更新
-        await refresh_job_panel(interaction.user.id)
-        
 
         await interaction.response.defer()
 
+        await refresh_job_panels_all()
         await refresh_all_panels()
-
-        await interaction.edit_original_response(
-            embed=self.embed(),
-            view=self
-        )
-
         await update_status()
 
-    @discord.ui.button(label="退勤",style=discord.ButtonStyle.danger,custom_id="end")
-    async def end(self,interaction,button):
+    @discord.ui.button(label="退勤", style=discord.ButtonStyle.danger, custom_id="end")
+    async def end(self, interaction, button):
+
         init_user(interaction.user)
-        uid=str(interaction.user.id)
+        uid = str(interaction.user.id)
 
         start = to_jst(datetime.fromisoformat(data[uid]["start_time"]))
         now = datetime.now(timezone.utc).astimezone(JST)
 
-        diff=(now-start).total_seconds()
+        diff = (now - start).total_seconds()
 
         message = get_kyoto_message(diff)
 
-        data[uid]["total_time"]+=diff
+        data[uid]["total_time"] += diff
+
         if data[uid]["history"]:
+            data[uid]["history"][-1]["end"] = now.isoformat()
 
-           data[uid]["history"][-1]["end"] = now.isoformat()
+        data[uid]["is_working"] = False
+        data[uid]["start_time"] = None
 
-        data[uid]["is_working"]=False
-        data[uid]["start_time"]=None
         save_data(data)
-        await trigger_refresh()
-
-        await refresh_job_panel(interaction.user.id)
-        
 
         await interaction.response.defer()
 
+        await refresh_job_panels_all()
         await refresh_all_panels()
-
-        await interaction.edit_original_response(
-            embed=self.embed(),
-            view=self
-        )
+        await update_status()
 
         await interaction.followup.send(
             message,
             ephemeral=True
         )
 
-    @discord.ui.button(label="オーダー",style=discord.ButtonStyle.primary,custom_id="order")
-    async def order(self,interaction,button):
-        await interaction.response.send_message("注文👇",view=OrderView(),ephemeral=True)
-    
+    @discord.ui.button(label="オーダー", style=discord.ButtonStyle.primary, custom_id="order")
+    async def order(self, interaction, button):
 
+        await interaction.response.send_message(
+            "注文👇",
+            view=OrderView(),
+            ephemeral=True
+        )
 # ------------------------
 # コマンド
 # ------------------------
@@ -6310,13 +6460,11 @@ async def refresh_owner_panel():
         print("OWNER更新失敗:", e)
 
 
+async def refresh_job_panels_all():
+    """JOBパネルを全員分強制更新"""
 
-    
+    global job_panels
 
-            
-async def refresh_everything():
-
-    # JOB
     for uid, panel in list(job_panels.items()):
         try:
             channel = bot.get_channel(panel["channel_id"])
@@ -6336,8 +6484,34 @@ async def refresh_everything():
                 view=view
             )
 
-        except:
-            continue
+        except Exception as e:
+            print("JOB更新失敗:", uid, e)
+    
+
+            
+async def refresh_everything():
+
+    # JOB
+    for uid, panel in list(job_panels.items()):
+        try:
+            channel = bot.get_channel(panel["channel_id"])
+            if not channel:
+                continue
+
+            msg = await channel.fetch_message(panel["message_id"])
+
+            # ★ここ修正（fetch_userに変更）
+            user = await bot.fetch_user(int(uid))
+
+            view = JobView(user)
+
+            await msg.edit(
+                embed=view.build_embed(),
+                view=view
+            )
+
+        except Exception as e:
+            print("JOB更新失敗:", uid, e)
 
     # 勤務パネル
     await refresh_all_panels()
@@ -7354,6 +7528,30 @@ class JobView(discord.ui.View):
 
         return embed
 
+    @discord.ui.button(
+        label="🔄 更新",
+        style=discord.ButtonStyle.primary,
+        custom_id="job_refresh"
+    )
+    async def refresh_button(self, interaction, button):
+        
+        
+        await interaction.response.defer()
+        
+        await refresh_job_panels_all()
+
+        # このメッセージ自身も更新
+        
+        try:
+            await interaction.message.edit(
+                embed=self.build_embed(),
+                view=self
+            )
+        except:
+            pass
+
+
+
     # ------------------------
     # 売上リセット
     # ------------------------
@@ -7375,6 +7573,7 @@ class JobView(discord.ui.View):
         data[uid]["sales"] = 0
 
         save_data(data)
+        await trigger_refresh()
 
         await interaction.response.edit_message(
             embed=self.build_embed(),
@@ -7402,6 +7601,7 @@ class JobView(discord.ui.View):
         data[uid]["history"] = []
 
         save_data(data)
+        await trigger_refresh()
 
         await interaction.response.edit_message(
             embed=self.build_embed(),
@@ -7462,6 +7662,10 @@ async def job(interaction: discord.Interaction):
         f"JOB更新完了：新規 {created} / 更新 {updated}",
         ephemeral=True
     )
+
+    await refresh_job_panels_all()
+
+
 async def clear_all_fixed_panels():
 
     for config in JOB_CONFIG.values():
@@ -7646,6 +7850,8 @@ async def on_ready():
     print("===== JOB PANELS =====")
     print(job_panels)
     print("=======================")
+
+    await refresh_job_panels_all()
 
 keep_alive()
 
