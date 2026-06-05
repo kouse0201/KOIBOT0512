@@ -1067,13 +1067,29 @@ async def refresh_everything():
     # OWNER
     await refresh_owner_panel()
 
-    # JOB
-    await asyncio.gather(
-        *(refresh_job_panel(uid) for uid in list(job_panels.keys())),
-        return_exceptions=True
-    )
+    # JOB（全員更新）
+    for uid, panel in list(job_panels.items()):
 
+        try:
+            channel = bot.get_channel(panel["channel_id"])
+            if not channel:
+                continue
 
+            msg = await channel.fetch_message(panel["message_id"])
+
+            member = channel.guild.get_member(int(uid))
+            if not member:
+                continue
+
+            view = JobView(member)
+
+            await msg.edit(
+                embed=view.build_embed(),
+                view=view
+            )
+
+        except:
+            continue
 
     # 勤務パネル
     await refresh_all_panels()
