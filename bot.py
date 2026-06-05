@@ -6331,10 +6331,7 @@ async def refresh_everything():
         return_exceptions=True
     )
 
-    try:
-        await refresh_job_panel(uid)
-    except Exception as e:
-        print("JOB更新失敗:", e)
+
 
     # 勤務パネル
     await refresh_all_panels()
