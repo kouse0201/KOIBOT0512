@@ -337,7 +337,6 @@ async def refresh_all_panels():
         if r in panel_messages:
             panel_messages.remove(r)
 
-    save_panels()
 # ------------------------
 # 京都ねぎらい
 # ------------------------
@@ -6068,7 +6067,6 @@ class OrderView(discord.ui.View):
 
             save_data(data)
 
-            await refresh_job_panel(interaction.user.id)
 
             ch=discord.utils.get(interaction.guild.text_channels,name="💹売上報告")
             if ch:
@@ -6134,19 +6132,14 @@ class WorkView(discord.ui.View):
         save_data(data)
 
         # ★ jobパネル更新
-        await refresh_job_panel(interaction.user.id)
-        
-
-        await interaction.response.defer()
-
-        await refresh_all_panels()
-
-        await interaction.edit_original_response(
-            embed=self.embed(),
-            view=self
+        await interaction.response.send_message(
+            "出勤しました",
+            ephemeral=True
         )
-
+        
         await update_status()
+
+
 
     @discord.ui.button(label="退勤",style=discord.ButtonStyle.danger,custom_id="end")
     async def end(self,interaction,button):
@@ -6169,22 +6162,11 @@ class WorkView(discord.ui.View):
         data[uid]["start_time"]=None
         save_data(data)
 
-        await refresh_job_panel(interaction.user.id)
-        
-
-        await interaction.response.defer()
-
-        await refresh_all_panels()
-
-        await interaction.edit_original_response(
-            embed=self.embed(),
-            view=self
-        )
-
-        await interaction.followup.send(
+        await interaction.response.send_message(            
             message,
             ephemeral=True
         )
+
 
     @discord.ui.button(label="オーダー",style=discord.ButtonStyle.primary,custom_id="order")
     async def order(self,interaction,button):
@@ -6251,9 +6233,6 @@ def save_owner_panel(channel_id, message_id):
 
 async def refresh_owner_panel():
 
-    global data
-
-    data = load_data()
 
     panel = load_owner_panel()
 
@@ -6315,7 +6294,6 @@ async def refresh_owner_panel():
 @tasks.loop(seconds=15)
 async def auto_refresh_panels():
 
-    await refresh_owner_panel()
     await refresh_everything()
     
 
@@ -6323,17 +6301,14 @@ async def auto_refresh_panels():
 async def refresh_everything():
 
     try:
-        # OWNER
-        await refresh_owner_panel()
 
-        # JOB（並列更新）
         await asyncio.gather(
-            *(refresh_job_panel(uid) for uid in list(job_panels.keys())),
+            refresh_owner_panel(),
+            refresh_all_panels(),
+            *(refresh_job_panel(uid)
+              for uid in list(job_panels.keys())),
             return_exceptions=True
         )
-
-        # 勤務パネル
-        await refresh_all_panels()
 
     except Exception as e:
         print("refresh_everything全体エラー:", e)
@@ -6449,7 +6424,6 @@ async def edittime(interaction,member:discord.Member,minutes:int):
     uid=str(member.id)
     data[uid]["total_time"]=max(0,data[uid]["total_time"]+minutes*60)
     save_data(data)
-    await refresh_job_panel(member.id)
     await interaction.response.send_message("OK",ephemeral=True)
 
 @tree.command(name="editpaying")
@@ -6463,7 +6437,6 @@ async def editpaying(interaction,member:discord.Member,target:str,amount:int):
         data[uid]["sales"] += amount  # ←max削除
 
     save_data(data)
-    await refresh_job_panel(member.id)
     
     await interaction.response.send_message("OK",ephemeral=True)
 
@@ -6484,7 +6457,6 @@ async def resettime(interaction,member:discord.Member):
     data[uid]["total_time"]=0
     data[uid]["history"]=[]
     save_data(data)
-    await refresh_job_panel(member.id)
     await interaction.response.send_message("OK",ephemeral=True)
 
 @tree.command(name="resetpaying")
@@ -6496,7 +6468,7 @@ async def resetpaying(interaction,member:discord.Member):
     data[uid]["sales"]=0
 
     save_data(data)
-    await refresh_job_panel(member.id)
+
     
     await interaction.response.send_message("OK",ephemeral=True)
 
@@ -7203,8 +7175,6 @@ class BonusView(discord.ui.View):
 
         save_data(data)
 
-        # 全更新
-        await refresh_everything()
 
         # メッセージ削除
         try:
@@ -7232,9 +7202,6 @@ class JobView(discord.ui.View):
     # パネル生成
     # ------------------------
     def build_embed(self):
-        
-        global data
-        data = load_data()
         
         uid = str(self.member.id)
         
