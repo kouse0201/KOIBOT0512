@@ -277,31 +277,32 @@ async def send_backup():
 
 async def refresh_job_panel(member_id):
 
+    uid = str(member_id)
+
+    panel = job_panels.get(uid)
+    if not panel:
+        return
+
+    channel = bot.get_channel(panel["channel_id"])
+    if not channel:
+        return
+
     try:
-        uid = str(member_id)
-
-        panel = job_panels.get(uid)
-        if not panel:
-            return
-
-        channel = bot.get_channel(panel["channel_id"])
-        if not channel:
-            print("JOB: channelなし")
-            return
-
         msg = await channel.fetch_message(panel["message_id"])
+    except:
+        return
 
-        member = channel.guild.get_member(int(uid))
-        if not member:
-            print("JOB: memberなし", uid)
-            return
+    try:
+        member = await bot.fetch_user(int(uid))
+    except:
+        return
 
-        view = JobView(member)
+    view = JobView(member)
 
-        await msg.edit(
-            embed=view.build_embed(),
-            view=view
-        )
+    await msg.edit(
+        embed=view.build_embed(),
+        view=view
+    )
 
         print("JOB更新成功:", uid)
 
@@ -2164,6 +2165,8 @@ async def job(interaction: discord.Interaction):
 
     await interaction.response.defer(ephemeral=True)
 
+    await delete_all_job_panels()
+
     created = 0
 
     for cfg in JOB_CONFIG.values():
@@ -2181,13 +2184,10 @@ async def job(interaction: discord.Interaction):
 
         view = JobView(member)
 
-        try:
-            msg = await channel.send(
-                embed=view.build_embed(),
-                view=view
-            )
-        except:
-            continue
+        msg = await channel.send(
+            embed=view.build_embed(),
+            view=view
+        )
 
         job_panels[user_id] = {
             "channel_id": channel.id,
@@ -2198,39 +2198,11 @@ async def job(interaction: discord.Interaction):
 
     save_job_panels()
 
-    await interaction.followup.send(f"JOBパネル生成完了：{created}件", ephemeral=True)
+    await interaction.followup.send(
+        f"JOBパネル再生成完了：{created}件",
+        ephemeral=True
+    )
 
-# =========================
-# JOB全削除→再生成
-# =========================
-    
-
-    for uid in list(job_panels.keys()):
-        config = job_panels[uid]
-        
-        member = interaction.guild.get_member(int(uid))
-        if not member:
-            continue
-
-        channel = bot.get_channel(config["channel_id"])
-        if not channel:
-            continue
-            
-        init_user(member)
-        new_view = JobView(member)
-
-        new_msg = await channel.send(
-            embed=new_view.build_embed(),
-            view=new_view
-        )
-
-        job_panels[uid] = {
-        "channel_id": channel.id,
-        "message_id": new_msg.id
-        
-        }
-        
-    save_job_panels()
 
 async def clear_all_fixed_panels():
 
