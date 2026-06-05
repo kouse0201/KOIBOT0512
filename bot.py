@@ -7402,39 +7402,24 @@ class JobView(discord.ui.View):
 # JOB コマンド
 # ------------------------
 @tree.command(name="job")
-async def job(interaction: discord.Interaction, 従業員: discord.Member = None):
+async def job(interaction: discord.Interaction, 従業員: discord.Member):
 
-    global job_panels
+    await interaction.response.defer()
 
-    await interaction.response.send_message("更新中", ephemeral=True)
+    init_user(従業員)
 
-    # ① 全削除
-    await clear_all_fixed_panels()
+    view = JobView(従業員)
 
-    targets = interaction.guild.members if 従業員 is None else [従業員]
+    msg = await interaction.followup.send(
+        embed=view.build_embed(),
+        view=view,
+        wait=True
+    )
 
-    # ② 再生成
-    for member in targets:
-
-        init_user(member)
-        view = JobView(member)
-
-        channel = bot.get_channel(
-            JOB_CONFIG[str(member.id)]["channel_id"]
-        )
-
-        if not channel:
-            continue
-
-        msg = await channel.send(
-            embed=view.build_embed(),
-            view=view
-        )
-
-        job_panels[str(member.id)] = {
-            "channel_id": channel.id,
-            "message_id": msg.id
-        }
+    job_panels[str(従業員.id)] = {
+        "channel_id": msg.channel.id,
+        "message_id": msg.id
+    }
 
     save_job_panels()
 
