@@ -6256,7 +6256,8 @@ class WorkView(discord.ui.View):
 
         for uid, u in data.items():
             if u.get("is_working"):
-                name = u.get("name") or "不明"
+                member = interaction.guild.get_member(int(uid))
+                name = member.display_name if member else (u.get("name") or "不明")
                 st = u.get("start_time")
 
                 if st:
@@ -7530,7 +7531,7 @@ class JobView(discord.ui.View):
 
     @discord.ui.button(
         label="🔄 更新",
-        style=discord.ButtonStyle.primary,
+        style=discord.ButtonStyle.secondary,
         custom_id="job_refresh"
     )
     async def refresh_button(self, interaction, button):
