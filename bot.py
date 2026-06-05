@@ -7402,30 +7402,29 @@ class JobView(discord.ui.View):
 # JOB コマンド
 # ------------------------
 @tree.command(name="job")
-async def job(
-    interaction: discord.Interaction,
-    従業員: discord.Member = None
-):
+async def job(interaction: discord.Interaction, 従業員: discord.Member = None):
 
     global job_panels
 
-    # 全体 or 個別
-    if 従業員 is None:
-        targets = interaction.guild.members
-    else:
-        targets = [従業員]
+    await interaction.response.send_message("更新中", ephemeral=True)
 
-    await interaction.response.send_message("処理開始", ephemeral=True)
+    # ① 全削除
+    await clear_all_fixed_panels()
 
-    # 既存削除
-    await delete_all_job_panels()
+    targets = interaction.guild.members if 従業員 is None else [従業員]
 
+    # ② 再生成
     for member in targets:
 
         init_user(member)
         view = JobView(member)
 
-        channel = interaction.channel
+        channel = bot.get_channel(
+            JOB_CONFIG[str(member.id)]["channel_id"]
+        )
+
+        if not channel:
+            continue
 
         msg = await channel.send(
             embed=view.build_embed(),
@@ -7442,7 +7441,7 @@ async def job(
 # =========================
 # JOB全削除→再生成
 # =========================
-    await delete_all_job_panels()
+    
 
     for uid in list(job_panels.keys()):
         config = job_panels[uid]
@@ -7476,39 +7475,31 @@ async def clear_all_fixed_panels():
     global job_panels
     global panel_messages
 
-    for config in JOB_CONFIG.values():
+    # JOBパネル削除（IDベース）
+    for uid, panel in list(job_panels.items()):
 
-        channel = bot.get_channel(
-            config["channel_id"]
-        )
-
+        channel = bot.get_channel(panel["channel_id"])
         if not channel:
             continue
 
         try:
+            msg = await channel.fetch_message(panel["message_id"])
+            await msg.delete()
+        except:
+            pass
 
-            async for msg in channel.history(limit=100):
+    # 勤務パネル削除（IDベース）
+    for panel in list(panel_messages):
 
-                if msg.author != bot.user:
-                    continue
+        channel = bot.get_channel(panel["channel_id"])
+        if not channel:
+            continue
 
-                # JOBパネル
-                if msg.components:
-                    await msg.delete()
-                    continue
-
-                # 勤務パネル
-                if msg.embeds:
-
-                    embed = msg.embeds[0]
-
-                    if (
-                        embed.title == "📋勤務パネル"
-                    ):
-                        await msg.delete()
-
-        except Exception as e:
-            print("削除失敗", e)
+        try:
+            msg = await channel.fetch_message(panel["message_id"])
+            await msg.delete()
+        except:
+            pass
 
     job_panels.clear()
     panel_messages.clear()
@@ -7621,93 +7612,7 @@ async def bonus(
         embed=embed,
         view=BonusView(対象者.id, 金額)
     )
-@tree.command(name="setjob")
-@app_commands.checks.has_permissions(
-    administrator=True
-)
-async def setjob(
-    interaction: discord.Interaction
-):
 
-    print("===== SETJOB開始 =====")
-
-    await interaction.response.defer(
-        ephemeral=True
-    )
-
-    print("defer成功")
-
-    print("パネル削除開始")
-    await clear_all_fixed_panels()
-
-    job_panels.clear()
-    panel_messages.clear()
-
-    print("パネル削除完了")
-
-    for name, config in JOB_CONFIG.items():
-
-        print("処理中:", name)
-
-        channel = bot.get_channel(
-            config["channel_id"]
-        )
-
-        if not channel:
-            print("channel取得失敗:", config["channel_id"])
-            continue
-
-        member = interaction.guild.get_member(
-            config["user_id"]
-        )
-
-        if not member:
-            print("member取得失敗:", config["user_id"])
-            continue
-
-        init_user(member)
-
-        view = JobView(member)
-
-        print("JOBパネル作成:", member.display_name)
-
-        job_msg = await channel.send(
-            embed=view.build_embed(),
-            view=view
-        )
-
-        print("JOB送信成功:", job_msg.id)
-
-        job_panels[str(member.id)] = {
-            "channel_id": channel.id,
-            "message_id": job_msg.id
-        }
-
-        panel_msg = await channel.send(
-            embed=work_view.embed(),
-            view=work_view
-        )
-
-        print("勤務パネル送信成功:", panel_msg.id)
-
-        panel_messages.append({
-            "channel_id": channel.id,
-            "message_id": panel_msg.id
-        })
-
-    print("保存開始")
-
-    save_job_panels()
-    save_panels()
-
-    print("保存完了")
-
-    await interaction.followup.send(
-        "業務パネルを再生成しましたえ。",
-        ephemeral=True
-    )
-
-    print("===== SETJOB終了 =====")
 
 
 # ------------------------
