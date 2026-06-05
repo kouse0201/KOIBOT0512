@@ -528,97 +528,12 @@ async def update(self, interaction):
 # ------------------------
 # メニュー（そのまま）
 # ------------------------
-MENU = {
-    "全日メニュー":{
-        "めんこいくん鍋":{"price":8500,"cost":4250},
-        "一口コロッケ":{"price":4000,"cost":1875},
-        "京のぶぶ漬け":{"price":3000,"cost":600},
-        "湯巡り梅":{"price":3500,"cost":1750},
-        "ほかほか湯豆腐スープ":{"price":5000,"cost":2375},
-        "お子様ランチ":{"price":4000,"cost":1750},
-        "おにぎりセット":{"price":3000,"cost":1500},
-        "特製KOI定食":{"price":5000,"cost":2375},
-        "特上うな重":{"price":5500,"cost":2750},
-        "温玉うどん":{"price":5000,"cost":2175},
-        "肉厚温玉牛丼":{"price":5500,"cost":2625},
-        "イカ飯弁当":{"price":7000,"cost":3250},
-        "お子様プレミア定食":{"price":5500,"cost":2500},
-        "贅沢かに御膳":{"price":6500,"cost":2750},
-        "金目鯛の煮つけ":{"price":7000,"cost":3250},
-        "しゅわしゅわラムネ":{"price":3000,"cost":1500},
-        "KOIばななみるく":{"price":5000,"cost":2500},
-        "KOI珈琲牛乳":{"price":5000,"cost":2000},
-        "こいくんの温玉ソフト":{"price":5000,"cost":2250},
-        "贅沢なKOIオロポ":{"price":5000,"cost":2125},
-        "こいくん醸造の日本酒":{"price":5500,"cost":2125},
-        "梅酒":{"price":5500,"cost":2125},
-        "ろシあん闇鍋":{"price":6500,"cost":1750},
-        "こいくん人形":{"price":5500,"cost":2250},
-        "湯の花の瓶":{"price":5000,"cost":2200},
-        },
-    "曜日限定メニュー":{
-        "白の湯:ライチ":{"price":5500,"cost":2250},
-        "赤の湯:イチゴ":{"price":5500,"cost":2000},
-        "蒼の湯:ラムネ":{"price":5500,"cost":2750},
-        "緑の湯:抹茶":{"price":5500,"cost":2500},
-        "黄金の湯:ゆず":{"price":5500,"cost":2000},
-        "紫の湯:ぶどう":{"price":5500,"cost":2875},
-        "橙の湯:みかん":{"price":5500,"cost":2400},
-        },
-    "チル限定メニュー":{
-        "KOI印のお守り・青":{"price":6000,"cost":2875},
-        "KOI印のお守り・赤":{"price":6000,"cost":2500},
-        "ちるいん":{"price":8000,"cost":3625},
-        },
-    "季節限定メニュー":{
-        "6月限定梅雨雨巡りセット":{"price":15000,"cost":6500},
-        "梅雨空クリームソーダ":{"price":8000,"cost":3250},
-        "雨音手毬寿司":{"price":8000,"cost":3250},
-        "6月こいくん人形":{"price":8000,"cost":3750},
-        "5月限定こいのぼりセット":{"price":12000,"cost":6775},
-        "春の桜づくしセット":{"price":16000,"cost":6625},
-        "桜香る春御膳":{"price":6000,"cost":1500},
-        "湯けむり桜ソーダ":{"price":7000,"cost":3125},
-        "桜にごり酒":{"price":6000,"cost":2000},
-        "ちらし寿司":{"price":10000,"cost":3500},
-        "本つげ櫛":{"price":10000,"cost":2500},
-        "恋したあの人":{"price":7000,"cost":1500},
-        },
-    "特別販売メニュー":{
-        "赤の刀":{"price":0,"cost":500000},
-        "青の刀":{"price":0,"cost":500000},
-        "緑の刀":{"price":0,"cost":500000},
-        "黄の刀":{"price":0,"cost":500000},
-        "紫の刀":{"price":0,"cost":500000},
-        },
-    "移動販売メニュー":{
-        "気まぐれ出張販売セット(移動)":{"price":7000,"cost":3875,"mobile":True},
-        "しゅわしゅわラムネ(移動)":{"price":3000,"cost":1500,"mobile":True},
-        "ほかほか湯豆腐スープ(移動)":{"price":4500,"cost":2375,"mobile":True},
-        "いっぱい飲みにKOIよセット":{"price":13000,"cost":5250,"mobile":True},
-        "温泉麦酒KOI心":{"price":6000,"cost":2250,"mobile":True},
-        "焼き鳥盛り合わせ":{"price":9000,"cost":3000,"mobile":True},
-        "がつ盛り焼きそば":{"price":6500,"cost":1750,"mobile":True},
-        "すき焼き御膳":{"price":30000,"cost":12000,"mobile":True},
-        "濃い黒たまご":{"price":6500,"cost":2000,"mobile":True},
-        "ブレンド珈琲饅頭(PIPEDOWN-South-)":{"price":100000,"cost":27500,"mobile":True},
-        },
-    "イベントメニュー":{
-        "田中さんのりんご飴":{"price":5500,"cost":2375,"mobile":True},
-        "KOIいちごみるく":{"price":5500,"cost":2625,"mobile":True},
-        "温泉のお香":{"price":6300,"cost":2000,"mobile":True},
-        "よくばりプリンパフェ":{"price":10000,"cost":2500,"mobile":True},
-        },
-    "販売停止メニュー":{
-        "KOI特選お寿司盛り合わせ":{"price":22500,"cost":8750},
-        "KOI特製温泉プリン":{"price":5000,"cost":2500},
-        "KOI印温泉饅頭":{"price":5000,"cost":2250},
-        "電動マッサージ機":{"price":50000,"cost":25000},
-        "肉厚とんかつ定食":{"price":5000,"cost":2500},
-        "こいくんケーキ":{"price":5000,"cost":1875},
-        "山菜の天ぷら蕎麦":{"price":6500,"cost":2500},
-    }
-}
+@tree.command(name="panel")
+async def panel(interaction):
+    await interaction.response.send_message(
+        embed=work_view.embed(interaction.guild),
+        view=work_view
+    )
 def build_status(self):
     text = "【現在の条件】\n"
 
@@ -6248,6 +6163,9 @@ class OrderView(discord.ui.View):
 # 勤務UI
 # ------------------------
 class WorkView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
     def embed(self, guild: discord.Guild):
         working = []
 
@@ -6515,7 +6433,15 @@ async def refresh_everything():
     await refresh_all_panels()
 
 @tree.command(name="panel")
-async def panel(interaction):
+async def panel(interaction: discord.Interaction):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "サーバー内で実行してください",
+            ephemeral=True
+        )
+        return
+
     await interaction.response.send_message(
         embed=work_view.embed(interaction.guild),
         view=work_view
@@ -6527,7 +6453,26 @@ async def panel(interaction):
         "channel_id": msg.channel.id,
         "message_id": msg.id
     })
-    
+
+    save_panels()
+
+    await delete_all_work_panels()
+
+    for config in JOB_CONFIG.values():
+        channel = bot.get_channel(config["channel_id"])
+        if not channel:
+            continue
+
+        panel_msg = await channel.send(
+            embed=work_view.embed(channel.guild),
+            view=work_view
+        )
+
+        panel_messages.append({
+            "channel_id": channel.id,
+            "message_id": panel_msg.id
+        })
+
     save_panels()
 
 # =========================
