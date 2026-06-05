@@ -2155,7 +2155,13 @@ async def job(interaction: discord.Interaction, 従業員: discord.Member = None
 
     uid = str(従業員.id)
 
-    config = JOB_CONFIG.get(uid)
+    config = None
+    
+    for v in JOB_CONFIG.values():
+        if str(v["user_id"]) == uid:
+            config = v
+            break
+            
     if not config:
         await interaction.followup.send("JOB設定なし", ephemeral=True)
         return
