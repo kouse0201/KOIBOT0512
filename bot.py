@@ -304,7 +304,7 @@ async def refresh_job_panel(member_id):
         view=view
     )
 
-        print("JOB更新成功:", uid)
+        print("JOB更新成功:", uid)   # ←ここがズレてる
 
     except Exception as e:
         print("JOB更新失敗:", uid, e)
