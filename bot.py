@@ -7472,34 +7472,30 @@ async def job(interaction: discord.Interaction, 従業員: discord.Member = None
 
 async def clear_all_fixed_panels():
 
-    global job_panels
-    global panel_messages
+    for config in JOB_CONFIG.values():
 
-    # JOBパネル削除（IDベース）
-    for uid, panel in list(job_panels.items()):
-
-        channel = bot.get_channel(panel["channel_id"])
+        channel = bot.get_channel(config["channel_id"])
         if not channel:
             continue
 
         try:
-            msg = await channel.fetch_message(panel["message_id"])
-            await msg.delete()
-        except:
-            pass
+            async for msg in channel.history(limit=200):
 
-    # 勤務パネル削除（IDベース）
-    for panel in list(panel_messages):
+                if msg.author != bot.user:
+                    continue
 
-        channel = bot.get_channel(panel["channel_id"])
-        if not channel:
-            continue
+                # ボタン付き全部削除（JOBパネル）
+                if msg.components:
+                    await msg.delete()
+                    continue
 
-        try:
-            msg = await channel.fetch_message(panel["message_id"])
-            await msg.delete()
-        except:
-            pass
+                # embed系も全部対象
+                if msg.embeds:
+                    await msg.delete()
+                    continue
+
+        except Exception as e:
+            print("削除失敗:", e)
 
     job_panels.clear()
     panel_messages.clear()
