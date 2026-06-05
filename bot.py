@@ -321,7 +321,7 @@ async def refresh_all_panels():
             msg = await channel.fetch_message(panel["message_id"])
 
             await msg.edit(
-                embed=work_view.embed(),
+                embed=work_view.embed(interaction.guild),
                 view=work_view
             )
 
@@ -6573,7 +6573,7 @@ async def panel(interaction: discord.Interaction):
             continue
 
         panel_msg = await channel.send(
-            embed=work_view.embed(),
+            embed=work_view.embed(interaction.guild),
             view=work_view
         )
 
