@@ -283,22 +283,18 @@ async def refresh_job_panel(member_id):
     if not panel:
         return
 
-    channel = bot.get_channel(panel["channel_id"])
-    if not channel:
-        return
-
     try:
+        channel = bot.get_channel(panel["channel_id"])
+        if not channel:
+            return
+
         msg = await channel.fetch_message(panel["message_id"])
-        member = await bot.fetch_user(int(uid))
+
+        member = await bot.fetch_user(int(uid))  # 安定取得
 
         view = JobView(member)
 
-        await msg.edit(
-            embed=view.build_embed(),
-            view=view
-        )
-
-        print("JOB更新成功:", uid)
+        await msg.edit(embed=view.build_embed(), view=view)
 
     except Exception as e:
         print("JOB更新失敗:", uid, e)
@@ -2159,9 +2155,8 @@ async def job(interaction: discord.Interaction):
 
     await interaction.response.defer(ephemeral=True)
 
-    await delete_all_job_panels()
-
     created = 0
+    updated = 0
 
     for cfg in JOB_CONFIG.values():
 
@@ -2175,13 +2170,22 @@ async def job(interaction: discord.Interaction):
             continue
 
         init_user(member)
-
         view = JobView(member)
 
-        msg = await channel.send(
-            embed=view.build_embed(),
-            view=view
-        )
+        panel = job_panels.get(user_id)
+
+        # 既存パネルがある場合は更新
+        if panel:
+            try:
+                msg = await channel.fetch_message(panel["message_id"])
+                await msg.edit(embed=view.build_embed(), view=view)
+                updated += 1
+                continue
+            except:
+                pass  # 消えてたら新規作成へ
+
+        # 新規作成
+        msg = await channel.send(embed=view.build_embed(), view=view)
 
         job_panels[user_id] = {
             "channel_id": channel.id,
@@ -2193,11 +2197,9 @@ async def job(interaction: discord.Interaction):
     save_job_panels()
 
     await interaction.followup.send(
-        f"JOBパネル再生成完了：{created}件",
+        f"JOB更新完了：新規 {created} / 更新 {updated}",
         ephemeral=True
     )
-
-
 async def clear_all_fixed_panels():
 
     for config in JOB_CONFIG.values():
