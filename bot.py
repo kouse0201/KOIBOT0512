@@ -7411,7 +7411,10 @@ async def job(interaction: discord.Interaction, 従業員: discord.Member = None
 
     init_user(従業員)
 
-    config = JOB_CONFIG[str(従業員.id)]
+    config = JOB_CONFIG.get(str(従業員.id))
+    if not config:
+        return
+
     channel = bot.get_channel(config["channel_id"])
 
     if not channel:
@@ -7649,6 +7652,7 @@ async def on_ready():
     print("=======================")
 
 keep_alive()
+await tree.sync()
 
 #bot.run("MTQ4NzM2NjU4MTYxNjExNTgxMg.Ge7vBK.AR7pjVIe3J5zZeIhL5tg7E0bpTKVYZQja8YKhY")
 bot.run(os.getenv("TOKEN"))
