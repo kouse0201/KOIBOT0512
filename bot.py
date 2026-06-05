@@ -7613,7 +7613,14 @@ async def bonus(
         view=BonusView(対象者.id, 金額)
     )
 
+@tree.command(name="clearpanel")
+async def clearpanel(interaction: discord.Interaction):
 
+    await interaction.response.send_message("全パネル削除中...", ephemeral=True)
+
+    await clear_all_fixed_panels()
+
+    await interaction.followup.send("削除完了", ephemeral=True)
 
 # ------------------------
 # 起動
