@@ -7652,7 +7652,7 @@ async def on_ready():
     print("=======================")
 
 keep_alive()
-await tree.sync()
+
 
 #bot.run("MTQ4NzM2NjU4MTYxNjExNTgxMg.Ge7vBK.AR7pjVIe3J5zZeIhL5tg7E0bpTKVYZQja8YKhY")
 bot.run(os.getenv("TOKEN"))
