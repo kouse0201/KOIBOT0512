@@ -289,22 +289,16 @@ async def refresh_job_panel(member_id):
 
     try:
         msg = await channel.fetch_message(panel["message_id"])
-    except:
-        return
-
-    try:
         member = await bot.fetch_user(int(uid))
-    except:
-        return
 
-    view = JobView(member)
+        view = JobView(member)
 
-    await msg.edit(
-        embed=view.build_embed(),
-        view=view
-    )
+        await msg.edit(
+            embed=view.build_embed(),
+            view=view
+        )
 
-        print("JOB更新成功:", uid)   # ←ここがズレてる
+        print("JOB更新成功:", uid)
 
     except Exception as e:
         print("JOB更新失敗:", uid, e)
