@@ -7548,14 +7548,14 @@ async def setjob(
         print("JOBパネル作成:", member.display_name)
 
         job_msg = await channel.send(
-            embed=view.build_embed(),
-            view=view
+            embed=job_view.build_embed(),
+            view=job_view
         )
 
         print("JOB送信成功:", job_msg.id)
 
         job_panels[str(member.id)] = {
-            "channel_id": channel.id,
+            "channel_id": job_msg.channel.id,
             "message_id": job_msg.id
         }
 
