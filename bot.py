@@ -2144,52 +2144,45 @@ class JobView(discord.ui.View):
 # JOB コマンド
 # ------------------------
 @tree.command(name="job")
-async def job(interaction: discord.Interaction, 従業員: discord.Member = None):
+async def job(interaction: discord.Interaction):
 
     await interaction.response.defer(ephemeral=True)
 
-    if 従業員 is None:
-        従業員 = interaction.user
+    created = 0
 
-    init_user(従業員)
+    for cfg in JOB_CONFIG.values():
 
-    uid = str(従業員.id)
+        user_id = str(cfg["user_id"])
+        channel = bot.get_channel(cfg["channel_id"])
+        if not channel:
+            continue
 
-    config = None
-    
-    for v in JOB_CONFIG.values():
-        if str(v["user_id"]) == uid:
-            config = v
-            break
-            
-    if not config:
-        await interaction.followup.send("JOB設定なし", ephemeral=True)
-        return
+        member = interaction.guild.get_member(int(user_id))
+        if not member:
+            continue
 
-    channel = bot.get_channel(config["channel_id"])
-    if channel is None:
-        await interaction.followup.send("チャンネル取得失敗", ephemeral=True)
-        return
+        init_user(member)
 
-    view = JobView(従業員)
+        view = JobView(member)
 
-    try:
-        msg = await channel.send(
-            embed=view.build_embed(),
-            view=view
-        )
-    except Exception as e:
-        await interaction.followup.send(f"送信失敗: {e}", ephemeral=True)
-        return
+        try:
+            msg = await channel.send(
+                embed=view.build_embed(),
+                view=view
+            )
+        except:
+            continue
 
-    job_panels[uid] = {
-        "channel_id": channel.id,
-        "message_id": msg.id
-    }
+        job_panels[user_id] = {
+            "channel_id": channel.id,
+            "message_id": msg.id
+        }
+
+        created += 1
 
     save_job_panels()
 
-    await interaction.followup.send("JOBパネル作成完了", ephemeral=True)
+    await interaction.followup.send(f"JOBパネル生成完了：{created}件", ephemeral=True)
 
 # =========================
 # JOB全削除→再生成
