@@ -6183,7 +6183,7 @@ class OrderView(discord.ui.View):
                     ephemeral=True
 
                 )
-                 return False
+                return False
 
             self.processing = True
 
@@ -6251,7 +6251,6 @@ class OrderView(discord.ui.View):
             save_data(data)
             await trigger_refresh()
 
-            await refresh_job_panel(interaction.user.id)
 
             ch=discord.utils.get(interaction.guild.text_channels,name="💹売上報告")
             if ch:
