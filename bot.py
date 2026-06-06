@@ -184,16 +184,20 @@ def load_data():
 
 def save_data(new_data):
 
-    global data
     global backup_needed
 
-    with open("data.json", "w", encoding="utf-8") as f:
-        json.dump(new_data, f, indent=2, ensure_ascii=False)
+    with open(
+        "data.json",
+        "w",
+        encoding="utf-8"
+    ) as f:
+        json.dump(
+            new_data,
+            f,
+            indent=2,
+            ensure_ascii=False
+        )
 
-    # 保存後に再読込
-    data = load_data()
-
-    # バックアップ予約
     backup_needed = True
 
 
@@ -295,7 +299,7 @@ async def refresh_job_panel(member_id):
 
         msg = await channel.fetch_message(panel["message_id"])
 
-        member = await bot.fetch_user(int(uid))  # 安定取得
+        member = channel.guild.get_member(int(uid))
 
         view = JobView(member)
 
@@ -6110,8 +6114,12 @@ class RemoveButton(discord.ui.Button):
 class OrderView(discord.ui.View):
     def __init__(self, page=0, cart=None):
         super().__init__(timeout=None)
-        self.page=page
-        self.cart=cart or {}
+
+        self.page = page
+        self.cart = cart or {}
+
+        # 連打防止
+        self.processing = False
 
         for cat, items in split_menu(page).items():
             self.add_item(CategorySelect(self,cat,items))
@@ -6168,7 +6176,23 @@ class OrderView(discord.ui.View):
             return False
 
         if cid=="confirm":
-            await interaction.response.defer(ephemeral=True)
+            
+            if self.processing:
+                await interaction.response.send_message(
+                    "処理中です",
+                    ephemeral=True
+
+                )
+                 return False
+
+            self.processing = True
+
+            for child in self.children:
+                child.disabled = True
+            
+            await interaction.response.edit_message(
+                view=self
+            )
 
             uid=str(interaction.user.id)
             init_user(interaction.user)
@@ -6297,8 +6321,7 @@ class WorkView(discord.ui.View):
 
         await interaction.response.defer()
 
-        await refresh_job_panels_all()
-        await refresh_all_panels()
+        await refresh_job_panel(interaction.user.id)
         await update_status()
 
     @discord.ui.button(label="退勤", style=discord.ButtonStyle.danger, custom_id="end")
@@ -6326,8 +6349,7 @@ class WorkView(discord.ui.View):
 
         await interaction.response.defer()
 
-        await refresh_job_panels_all()
-        await refresh_all_panels()
+        await refresh_job_panel(interaction.user.id)
         await update_status()
 
         await interaction.followup.send(
@@ -7441,9 +7463,7 @@ class JobView(discord.ui.View):
     # ------------------------
     def build_embed(self):
         
-        global data
-        data = load_data()
-        
+
         uid = str(self.member.id)
         
         u = data.get(uid, {})
